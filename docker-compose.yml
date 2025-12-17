@@ -1,0 +1,10 @@
+services:
+  mtg-board:
+    build: .
+    container_name: mtg_board_game
+    ports:
+      - "3001:3001"
+    volumes:
+      - ./server/deck.txt:/app/server/deck.txt
+      - ./server/tokens.txt:/app/server/tokens.txt
+    restart: unless-stopped

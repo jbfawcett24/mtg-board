@@ -1,67 +1,77 @@
-1 Lord of the Nazgûl (LTC) 142
+1 Lord of the Nazgûl (LTC) 467
 1 An Offer You Can't Refuse (SNC) 51
 1 Anticipate (BFZ) 69
-1 Arcane Denial (ALL) 22b
-1 Arcane Signet (40K) 229
-1 Ash Barrens (CLB) 880
+1 Arcane Denial (LTC) 184
+1 Arcane Signet (LTC) 273
+1 Ash Barrens (LTC) 295
 1 Baral, Chief of Compliance (MUL) 8
 1 Blue Sun's Twilight (ONE) 379
-1 Brainstorm (EMA) 40
-1 Cackling Counterpart (ISD) 46
+1 Brainstorm (40K) 192
+1 Cackling Counterpart (MM3) 32
 1 Careful Study (ODY) 70
 1 Charcoal Diamond (CLB) 442
-1 Chart a Course (XLN) 48
-1 Command Tower (CMR) 350
-1 Counterspell (DMR) 45 *F*
-1 Countersquall (UMA) 198
-1 Dark Ritual (MIR) 116
-1 Darkwater Catacombs (NCC) 398
+1 Chart a Course (LCI) 48
+1 Command Tower (LTC) 301
+1 Counterspell (DSC) 114
+1 Countersquall (PLST) DDH-59
+1 Dark Ritual (DVD) 45
+1 Darkwater Catacombs (AFC) 232
 1 Dimir Signet (CLB) 857
 1 Drown in the Loch (CLB) 842
-1 Drowned Catacomb (XLN) 253
-1 Exotic Orchard (C20) 273
-1 Fellwar Stone (PLST) CMD-248
-1 Frantic Search (DMR) 285
-1 Glorious Gale (LTR) 51
+1 Drowned Catacomb (LTC) 305
+1 Exotic Orchard (LTC) 307
+1 Fellwar Stone (TDC) 318
+1 Frantic Search (TLE) 159
+1 Glorious Gale (LTR) 502
 1 Irenicus's Vile Duplication (CLB) 78
-16 Island (M21) 264
-1 March of Swirling Mist (NEO) 61
-1 Mind Stone (40K) 245
+8 Island (LTR) 715 *F*
+8 Island (LTR) 716 *F*
+1 March of Swirling Mist (PRM) 97927
+1 Mind Stone (LTC) 282
 1 Mirage Mockery (ONC) 32
 1 Mirror Box (NEO) 403
-9 Nazgûl (LTR) 334
-1 Negate (OGW) 59
+1 Nazgûl (LTR) 551
+1 Nazgûl (LTR) 726
+1 Nazgûl (LTR) 723
+1 Nazgûl (LTR) 725
+1 Nazgûl (LTR) 724
+1 Nazgûl (LTR) 727
+1 Nazgûl (LTR) 728
+1 Nazgûl (LTR) 730
+1 Negate (STA) 18
 1 Orvar, the All-Form (KHM) 305
-1 Path of Ancestry (MIC) 178
+1 Path of Ancestry (LTC) 322
 1 Pirated Copy (J22) 16
 1 Pull from Tomorrow (MOC) 230
 1 Quasiduplicate (GRN) 51
-1 Reality Shift (MOC) 231
-1 Remand (MM2) 55
-1 Replication Technique (C21) 31
+1 Reality Shift (SLD) 1781
+1 Remand (PRM) 31429 *F*
+1 Replication Technique (C21) 358
 1 Repulse (CN2) 119
 1 Ringwraiths (LTR) 385
 1 Rite of Replication (PLST) ZEN-61
-1 River of Tears (BRC) 197
-1 Saheeli's Artistry (MOC) 234
+1 River of Tears (WHO) 509
+1 Saheeli's Artistry (PKLD) 62 *F*
 1 Sakashima the Impostor (PLST) SOK-53
-1 Scroll of Isildur (LTR) 69
-1 See Double (MOM) 77
-1 Silver Scrutiny (DMU) 65
+1 Scroll of Isildur (LTR) 520
+1 See Double (MOM) 353
+1 Silver Scrutiny (DMU) 395
 1 Sky Diamond (CLB) 449
-1 Snap (DMR) 66
-1 Sol Ring (40K) 251
-1 Soothing of Sméagol (LTR) 70
-1 Spark Double (WAR) 68
+1 Snap (PLST) DDS-10
+1 Sol Ring (LTC) 408
+1 Soothing of Sméagol (LTR) 521
+1 Spark Double (RVR) 421
 1 Stolen Identity (NCC) 233
-11 Swamp (ITP) 61
+5 Swamp (LTR) 717 *F*
+6 Swamp (LTR) 718 *F*
 1 Tainted Isle (CLB) 920
-1 Talisman of Dominance (40K) 255
-1 Temple of Deceit (BRC) 205
+1 Talisman of Dominance (WOC) 150
+1 Temple of Deceit (PRM) 79873
 1 Tempt with Reflections (C13) 60
-1 Turnabout (DMR) 295
-1 Underground River (PBRO) 267p *F*
+1 The One Ring (LTR) 697
+1 Turnabout (RVR) 452
+1 Underground River (LTC) 342
 1 Windfall (IMA) 77
-1 Witch-king of Angmar (LTR) 114
+1 Witch-king of Angmar (LTR) 565
 1 Witch-king, Bringer of Ruin (LTR) 391
 1 Zndrsplt's Judgment (BBD) 43
