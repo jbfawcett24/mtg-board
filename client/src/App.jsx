@@ -3,7 +3,11 @@ import {useState, useEffect} from "react";
 import Board from "./board.jsx";
 import Hand from "./hand.jsx";
 
-const socket  = io.connect();
+const socket  = io.connect({
+    auth: {
+        code: "mtg2025" // Must match SHARED_SECRET in server/index.js
+    }
+});
 
 export default function App() {
     const [role, setRole] = useState("unknown");
