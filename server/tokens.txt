@@ -1,0 +1,4 @@
+Copy [tcmm]
+The Ring [tltr]
+Treasure [tltr]
+Wraith [tltc]
