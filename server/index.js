@@ -2,8 +2,9 @@ const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
 const cors = require('cors');
-const { loadDeck, loadTokens} = require('./deckLoader');
+const { loadDeck, loadTokens, getDeckList} = require('./deckLoader');
 const path = require('path');
+const { setGameState } = require("./stateManager");
 
 const app = express();
 app.use(cors());
@@ -30,40 +31,14 @@ const io = new Server(server, {
 
 const SHARED_SECRET = "mtg2025"
 
-let gameState = {
-    commander: [],
-    library: [],
-    hand: [],
-    board: [],
-    graveyard: [],
-    exile: [],
-    tokenList: [],
-    tokenBoard: [],
-}
-
-loadDeck(path.join(__dirname, 'deck.txt')).then(cards => {
-    gameState.commander = cards.commander.map(card => {
-        return {
-            ...card,
-            x: 100,
-            y: 100
-        }
+let gameState;
+const decks = getDeckList().then((decks) => {
+    console.log(decks[0].name);
+    setGameState(decks[0].name).then(initialDeck => {
+        gameState = initialDeck;
+        console.log("Initial game loaded")
     });
-
-    gameState.library = cards.deck.sort(() => Math.random() - 0.5);
-
-    gameState.hand = gameState.library.splice(0, 7);
-
-    console.log(`Game ready! Hand: ${gameState.hand.length}, Library: ${gameState.library.length}`);
-    console.log(`Commander: ${gameState.commander[0].name}`);
 });
-
-loadTokens(path.join(__dirname, 'tokens.txt')).then(cards => {
-    gameState.tokenList = cards
-    gameState.tokenList.forEach((token) => {
-        console.log(token.imageUrl)
-    })
-})
 
 io.use((socket, next) => {
     const code = socket.handshake.auth.code;
@@ -179,27 +154,22 @@ io.on('connection', (socket) => {
         io.emit('update_state', gameState);
     })
 
-    socket.on("reset_game", () => {
-        const zonesToClear = ['board', 'exile', 'hand', 'graveyard', 'library'];
-        const foundLibrary = [];
+// 1. Make the callback async
+    socket.on("reset_game", async () => {
 
-        zonesToClear.forEach(zone => {
-            gameState[zone].forEach((card) => {
-                delete card.x;
-                delete card.y;
-                delete card.rotation;
+        // 2. Await the deck list here
+        const currentDecks = await getDeckList();
 
-                foundLibrary.push(card);
-            })
+        // 3. Send the actual data
+        io.emit('select_deck', currentDecks);
 
-            gameState[zone] = []
-        })
+        console.log(`Game restarted, sending deck list...`);
+    });
 
-        gameState.tokenBoard = [];
+    socket.on('deck_selected', async (deck) => {
+        console.log(`Deck selected: ${deck.deckName}`);
 
-        gameState.library = foundLibrary.sort(() => Math.random() - 0.5);
-        gameState.hand = gameState.library.splice(0, 7);
-
+        gameState = await setGameState(deck.deckName);
         io.emit('update_state', gameState);
     })
 

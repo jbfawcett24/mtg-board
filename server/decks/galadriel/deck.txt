@@ -1,0 +1,92 @@
+1 Galadriel, Light of Valinor (LTC) 498 *F*
+1 Aragorn and Arwen, Wed (LTR) 394
+1 Arcane Denial (LTC) 184
+1 Arcane Signet (LTC) 273
+1 Arwen Undómiel (LTR) 645
+1 Arwen, Mortal Queen (LTR) 644
+1 Arwen, Weaver of Hope (LTC) 437
+1 Asceticism (LTC) 233
+1 Beast Within (LTC) 234
+1 Boromir, Warden of the Tower (LTR) 455
+1 Canopy Vista (LTC) 298
+1 Celeborn the Wise (LTR) 607
+1 Chromatic Lantern (LTC) 275
+1 Command Tower (LTC) 301
+1 Cultivate (C19) 159
+1 Door of Destinies (LTC) 277
+1 Elrond, Lord of Rivendell (LTR) 500
+1 Elrond, Master of Healing (LTR) 651
+1 Elven Chorus (LTR) 611
+1 Elvish Archdruid (LTC) 237
+1 Elvish Harbinger (LTC) 527
+1 Elvish Mariner (LTR) 384
+1 Elvish Mystic (LTC) 238
+1 Elvish Piper (LTC) 239
+1 Elvish Visionary (LTC) 240
+1 Elvish Warmaster (LTC) 241
+1 Exotic Orchard (LTC) 307
+1 Fangorn Forest (LTC) 377
+1 Farhaven Elf (LTC) 243
+1 Farseek (LTC) 244
+1 Flowering of the White Tree (LTR) 466
+4 Forest (LTR) 281
+4 Forest (LTR) 280
+1 Fortified Village (LTC) 311
+1 Frontline Medic (LTC) 169
+1 Fumigate (LTC) 170
+1 Galadhrim Ambush (LTC) 440
+1 Galadhrim Brigade (LTC) 546 *F*
+1 Galadriel of Lothlórien (LTR) 657
+1 Galadriel, Gift-Giver (LTR) 393
+1 Galadriel's Dismissal (LTC) 500 *F*
+1 Glacial Fortress (LTC) 315
+1 Glorious Gale (LTR) 502
+1 Graypelt Refuge (LTC) 316
+1 Henneth Annûn (LTC) 373
+1 Herald's Horn (LTC) 280
+1 Heroic Intervention (LTC) 249
+1 Hinterland Harbor (LTC) 317
+1 Island (LTR) 715 *F*
+2 Island (LTR) 716 *F*
+1 Last March of the Ents (LTR) 623
+1 Legolas Greenleaf (LTC) 442
+1 Legolas, Counter of Kills (LTR) 663
+1 Legolas, Master Archer (LTR) 624
+1 Lightning Greaves (LTC) 281
+1 Lórien Revealed (LTR) 511
+1 Lost Isle Calling (LTR) 512
+1 Lothlórien Blade (LTC) 487
+1 Minas Tirith (LTR) 752 *F*
+1 Mirkwood Channeler (LTR) 833
+1 Mirkwood Trapper (LTC) 469
+1 Mithril Coat (LTR) 696
+1 Mystic Confluence (LTC) 193
+1 Opt (LTC) 194
+1 Overwhelming Stampede (LTC) 254
+1 Palantír of Orthanc (LTR) 698
+1 Paradise Druid (LTC) 255
+1 Path of Ancestry (LTC) 322
+2 Plains (LTR) 273
+1 Plains (LTR) 272
+1 Port Town (LTC) 323
+1 Preordain (LTC) 196
+1 Raise the Palisade (LTC) 425
+1 Rampant Growth (LTC) 257
+1 Rejuvenating Springs (LTC) 325
+1 Reprieve (LTR) 477
+1 Rivendell (LTR) 755 *F*
+1 Rogue's Passage (LTC) 326
+1 Scattered Groves (LTC) 328
+1 Secluded Courtyard (LTC) 330
+1 Sol Ring (LTC) 408
+1 Sunpetal Grove (LTC) 336
+1 Supreme Verdict (LTC) 272
+1 Swan Song (LTC) 197
+1 Swords to Plowshares (LTC) 178
+1 Thornwood Falls (LTC) 338
+1 Thought Vessel (LTC) 287
+1 Tranquil Cove (LTC) 340
+1 Unbreakable Formation (LTC) 179
+1 Vanquisher's Banner (LTC) 289
+1 Vineglimmer Snarl (LTC) 343
+1 War of the Last Alliance (LTR) 487

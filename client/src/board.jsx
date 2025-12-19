@@ -1,11 +1,13 @@
 import Card from "./card.jsx"
-import { useState } from "react"
+import {useEffect, useState} from "react"
 import ContextMenu from "./contextMenu.jsx"
 import ZoneViewer from "./ZoneViewer.jsx";
+import DeckSelect from "./DeckSelect.jsx";
 
 export default function Board({ gameState, socket}) {
     const [menuState, setMenuState] = useState(null)
     const [viewingZone, setViewingZone] = useState(null)
+    const [deckSelect, setDeckSelect] = useState(null)
 
     const handleContextMenu = (e, cardId) => {
         console.log("context menu")
@@ -59,6 +61,19 @@ export default function Board({ gameState, socket}) {
             socket.emit('move_zone', {cardId, targetZone: action})
         }
     }
+
+    useEffect(() => {
+        const handleDeckSelect = (decks) => {
+            setDeckSelect(decks);
+            console.log(deckSelect);
+        };
+
+        socket.on('select_deck', handleDeckSelect);
+
+        return () => {
+            socket.off('select_deck', handleDeckSelect);
+        };
+    }, [deckSelect, socket]);
 
     return (
         <div
@@ -143,6 +158,13 @@ export default function Board({ gameState, socket}) {
                     onClose={() => {setViewingZone(null)}}
                     socket={socket}
                     onMove={(id, action, payload) => performMove(id, action, payload)}
+                />
+            )}
+            {deckSelect && (
+                <DeckSelect
+                    socket={socket}
+                    deckList={deckSelect}
+                    onClose={() => {setDeckSelect(null)}}
                 />
             )}
         </div>

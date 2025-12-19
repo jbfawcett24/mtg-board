@@ -1,6 +1,49 @@
 const fs = require('fs');
 const axios = require('axios');
 
+async function getDeckList() {
+    const decks = fs.readdirSync('./decks/', {withFileTypes: true})
+        .filter(folder => folder.isDirectory())
+        .map(folder => folder.name);
+
+    const commanders = [];
+
+    decks.forEach(deck => {
+        commanders.push(fs.readFileSync('./decks/' + deck + '/deck.txt', 'utf8').split('\n')[0]);
+    })
+
+    const identifiers = commanders.map(commander => {
+        const match = commander.match(/^(\d+)\s+(.+?)\s+\(([A-Za-z0-9]+)\)\s+(\S+)/);
+        if (match) {
+            const set = match[3];
+            const collector_number = match[4];
+            return {
+                set: set,
+                collector_number: collector_number,
+            }
+        } else {
+            return {}
+        }
+    })
+
+    const response = await axios.post("https://api.scryfall.com/cards/collection", {identifiers: identifiers});
+
+    const cards = response.data.data;
+
+    const returnDecks = cards.map(card => {
+        return {
+            imageUrl: card.image_uris ? card.image_uris.normal : card.card_faces[0].image_uris.normal,
+        }
+    })
+
+    decks.forEach((name, index) => {
+        returnDecks[index].name = name
+    });
+
+    console.log(returnDecks);
+    return returnDecks;
+}
+
 async function loadDeck(filePath) {
     console.log(`Loading deck from ${filePath}...`);
 
@@ -181,4 +224,4 @@ async function loadTokens(filePath) {
 //     gameState.tokenMenu = tokens;
 // });
 
-module.exports = { loadDeck, loadTokens };
+module.exports = { getDeckList, loadDeck, loadTokens };

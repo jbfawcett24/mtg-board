@@ -3,7 +3,7 @@ import {useState, useEffect} from "react";
 import Board from "./board.jsx";
 import Hand from "./hand.jsx";
 
-const socket  = io.connect({
+const socket  = io.connect("192.168.1.136:3001", {
     auth: {
         code: "mtg2025" // Must match SHARED_SECRET in server/index.js
     }
@@ -23,7 +23,7 @@ export default function App() {
             setGameState(newState);
         })
 
-        return () => socket.off("receive_pong");
+        return () => socket.off("update_state");
     }, []);
 
     if(role === 'board') {
