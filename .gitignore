@@ -1,4 +1,5 @@
 .idea/
+server/decks/*
 # Logs
 logs
 *.log
