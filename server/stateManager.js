@@ -14,13 +14,16 @@ async function setGameState(deckName) {
         exile: [],
         tokenList: [],
         tokenBoard: [],
+        theme: {}
     };
 
     // 2. Use Promise.all to wait for both files to load
     const [deckCards, tokenCards] = await Promise.all([
-        loadDeck(path.join(__dirname, "decks", deckName, 'deck.txt')),
-        loadTokens(path.join(__dirname, "decks", deckName, 'tokens.txt'))
+        loadDeck(path.join(deckName)),
+        loadTokens(path.join(deckName))
     ]);
+
+    gameState.theme = deckCards.theme;
 
     // 3. Process Deck Cards
     gameState.commander = deckCards.commander.map(card => ({

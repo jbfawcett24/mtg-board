@@ -10,6 +10,8 @@ export default function ContextMenu({ x, y, onAction, onClose, options}) {
         {label: "Top of library", action: "top"},
         {label: "X from Top of library", action: "position"},
         {label: "Bottom of library", action: "bottom"},
+        {label: "Top of Stack", action: "topStack"},
+        {label: "Bottom of Stack", action: "bottomStack"},
     ];
 
     const menuOptions = options || defaultOptions;
@@ -34,14 +36,20 @@ export default function ContextMenu({ x, y, onAction, onClose, options}) {
             <div
                 onClick={onClose}
                 onContextMenu={(e) => {e.preventDefault(); onClose();}}
-                style={{position: 'fixed', zIndex: 9998}}
+                style={{position: 'fixed', zIndex: 9998,
+                top: 0,
+                    left: 0,
+                    width: "100vw",
+                    height: "100vh"
+                }}
             />
 
             <motion.div
-                initial={{ opacity: 0, scale: 0.9}}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0 }}
+                initial={{ opacity: 1, scale: 1, height: 0}}
+                animate={{ opacity: 1, scale: 1, height: "auto"}}
+                exit={{ opacity: 1, height: 0 }}
                 style={{
+                    transformOrigin: "top left",
                     position: 'absolute',
                     top: y,
                     left: x,
@@ -54,7 +62,8 @@ export default function ContextMenu({ x, y, onAction, onClose, options}) {
                     gap: "2px",
                     boxShadow: "0 10px 30px rgba(0, 0, 0, 0.5)",
                     zIndex: 9999,
-                    minWidth: "160px"
+                    minWidth: "160px",
+                    overflow: "hidden"
                 }}
             >
                 {menuOptions.map((option, index) => (

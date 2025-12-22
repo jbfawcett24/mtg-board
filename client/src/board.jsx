@@ -9,6 +9,9 @@ export default function Board({ gameState, socket}) {
     const [viewingZone, setViewingZone] = useState(null)
     const [deckSelect, setDeckSelect] = useState(null)
 
+    const bgImage = gameState.theme?.background || "/background.jpg"
+    const cardBackImg = gameState.theme?.cardBack || "/card-back.jpg"
+
     const handleContextMenu = (e, cardId) => {
         console.log("context menu")
         e.preventDefault();
@@ -47,22 +50,42 @@ export default function Board({ gameState, socket}) {
     }
 
     const performMove= (cardId, action, payload) => {
-        if (action === 'tap') {
-            const card = gameState.board.find(card => card.id === cardId);
-            const newRot = card.rotation === 0 ? 90 : 0;
-            socket.emit("card_update", {id: cardId, changes: { rotation: newRot }});
-        } else if (action === 'top') {
-            socket.emit('move_zone', {cardId, targetZone: 'library', position: 'top'})
-        } else  if (action === 'bottom') {
-            socket.emit('move_zone', {cardId, targetZone: 'library', position: 'bottom'})
-        } else if( action === 'position') {
-            socket.emit('move_zone', {cardId, targetZone: 'library', position: payload})
-        } else {
-            socket.emit('move_zone', {cardId, targetZone: action})
+        switch(action) {
+            case "tap":
+                { const card = gameState.board.find(card => card.id === cardId);
+                const newRot = card.rotation === 0 ? 90 : 0;
+                socket.emit("card_update", {id: cardId, changes: { rotation: newRot }});
+                break; }
+            case "top":
+                socket.emit('move_zone', {cardId, targetZone: 'library', position: 'top'})
+                break;
+            case "bottom":
+                socket.emit('move_zone', {cardId, targetZone: 'library', position: 'bottom'});
+                break;
+            case "position":
+                socket.emit('move_zone', {cardId, targetZone: 'library', position: payload});
+                break;
+            case "topStack":
+            {
+                //find the highest number of cards
+                const zIndexNum = Math.max(gameState.tokenBoard.length, gameState.board.length) + 2;
+                console.log(`moving to position ${zIndexNum}`)
+                socket.emit('card_update', {id: cardId, changes:{zIndex: zIndexNum}});
+                break;
+            }
+            case "bottomStack":
+            {
+                socket.emit('card_update', {id: cardId, changes: {zIndex: 1}})
+                break;
+            }
+            default:
+                socket.emit('move_zone', {cardId, targetZone: action})
+                break;
         }
     }
 
     useEffect(() => {
+        console.log(gameState);
         const handleDeckSelect = (decks) => {
             setDeckSelect(decks);
             console.log(deckSelect);
@@ -73,7 +96,7 @@ export default function Board({ gameState, socket}) {
         return () => {
             socket.off('select_deck', handleDeckSelect);
         };
-    }, [deckSelect, socket]);
+    }, [deckSelect, gameState, socket]);
 
     return (
         <div
@@ -81,8 +104,10 @@ export default function Board({ gameState, socket}) {
             style={{
                 width: "100vw",
                 height: "100vh",
-                backgroundImage: "url(/background.png)",
+                backgroundImage: `url(${bgImage})`,
                 backgroundSize: "cover",
+                backgroundPosition: "center",
+                backgroundRepeat: "no-repeat",
                 position: "relative",
                 overflow: "hidden",
             }}
@@ -110,7 +135,7 @@ export default function Board({ gameState, socket}) {
                     cursor: 'pointer',
                     backgroundColor: 'rgba(0, 0, 0, 0.3)',
                     usrSelect: 'none',
-                    backgroundImage: 'url(/card-back.jpg)',
+                    backgroundImage: `url(${cardBackImg})`,
                     backgroundSize: 'cover',
                     fontWeight: 'bold',
                     fontSize: '20px',

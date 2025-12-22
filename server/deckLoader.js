@@ -1,15 +1,21 @@
 const fs = require('fs');
 const axios = require('axios');
+const config = require('../config.json');
+const {resolve} = require("node:path");
+const path = require("node:path");
+const {resolvePath} = require("./pathHandler");
 
 async function getDeckList() {
-    const decks = fs.readdirSync('./decks/', {withFileTypes: true})
+    const deckPath = resolvePath(config.deckPath);
+
+    const decks = fs.readdirSync(deckPath, {withFileTypes: true})
         .filter(folder => folder.isDirectory())
         .map(folder => folder.name);
 
     const commanders = [];
 
     decks.forEach(deck => {
-        commanders.push(fs.readFileSync('./decks/' + deck + '/deck.txt', 'utf8').split('\n')[0]);
+        commanders.push(fs.readFileSync(deckPath + '/' + deck + '/deck.txt', 'utf8').split('\n')[0]);
     })
 
     const identifiers = commanders.map(commander => {
@@ -44,8 +50,11 @@ async function getDeckList() {
     return returnDecks;
 }
 
-async function loadDeck(filePath) {
-    console.log(`Loading deck from ${filePath}...`);
+async function loadDeck(deckName) {
+    console.log(`Loading deck: ${deckName}...`);
+
+    const folderPath = path.join(resolvePath(config.deckPath), deckName);
+    const filePath = path.join(folderPath, 'deck.txt');
 
     const fileContent = fs.readFileSync(filePath, 'utf-8');
     const lines = fileContent.split('\n').filter((line) => line.trim() !== '');
@@ -125,9 +134,31 @@ async function loadDeck(filePath) {
         }
     }
 
+    const validExtensions = [".png", ".jpg", ".jpeg"];
+    let customBackground = null;
+    let customCardBack = null;
+
+    const findFile = (baseName) => {
+        for(const ext of validExtensions) {
+            console.log(`checking for ${path.join(folderPath, baseName + ext)}`);
+            if(fs.existsSync(path.join(folderPath, baseName + ext))) {
+                console.log("Found!");
+                return `/decks/${encodeURIComponent(deckName)}/${baseName}${ext}`;
+            }
+        }
+        return null;
+    }
+
+    customBackground = findFile("background");
+    customCardBack = findFile("card-back");
+
     const finalDeck = {
         commander: [],
         deck: [],
+        theme : {
+            background: customBackground,
+            cardBack: customCardBack,
+        }
     }
 
     identifiers.forEach(identifier => {
@@ -152,7 +183,10 @@ async function loadDeck(filePath) {
     return finalDeck;
 }
 
-async function loadTokens(filePath) {
+async function loadTokens(deckName) {
+    const folderPath = path.join(resolvePath(config.deckPath), deckName);
+    const filePath = path.join(folderPath, 'tokens.txt');
+
     const fileContent = fs.readFileSync(filePath, 'utf-8');
     // 1. Clean up lines
     const lines = fileContent.split('\n').filter((line) => line.trim() !== '');

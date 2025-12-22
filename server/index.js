@@ -6,10 +6,19 @@ const { loadDeck, loadTokens, getDeckList} = require('./deckLoader');
 const path = require('path');
 const { setGameState } = require("./stateManager");
 
+const config = require("../config.json");
+const {homedir} = require("node:os");
+const {resolvePath} = require("./pathHandler");
+
+
 const app = express();
 app.use(cors());
 
 app.use(express.static(path.join(__dirname, '../client/dist')));
+
+const absoluteDeckPath = resolvePath(config.deckPath);
+console.log(`Gettings decks from ${absoluteDeckPath}`);
+app.use("/decks", express.static(absoluteDeckPath));
 
 // 2. Handle React Routing (Send index.html for any unknown route)
 //    This ensures that if you refresh the page, it doesn't crash.
@@ -52,7 +61,12 @@ io.on('connection', (socket) => {
     socket.emit('update_state', gameState);
 
     socket.on('card_update', ({id, changes}) => {
-        const card = gameState.board.find(card => card.id === id);
+        let card = gameState.board.find(card => card.id === id);
+
+        if(!card) {
+            card = gameState.tokenBoard.find(card => card.id === id);
+        }
+
         if (card) {
             Object.assign(card, changes);
             io.emit('update_state', gameState);

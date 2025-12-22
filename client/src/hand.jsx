@@ -1,10 +1,12 @@
-import {motion, useMotionTemplate, useMotionValue, useSpring, useTransform} from "framer-motion";
+import {AnimatePresence, motion, useMotionTemplate, useMotionValue, useSpring, useTransform} from "framer-motion";
 import useLongPress from "./useLongPress.js";
 import {useRef, useState} from "react";
+import ContextMenu from "./contextMenu.jsx";
 
 export default function Hand({ gameState, socket }) {
     const [zoomedCardId, setZoomedCardId] = useState(null);
-    const [viewMode, setViewMode] = useState('hand')
+    const [viewMode, setViewMode] = useState('hand');
+    const [menu, setMenu] = useState(null);
 
     const isCoolDown = useRef(false);
 
@@ -55,10 +57,36 @@ export default function Hand({ gameState, socket }) {
         setZoomedCardId(cardId);
     }
 
+    const handleAction = (action, payload) => {
+        console.log(action, payload);
+        performMove(zoomedCardId, action, payload);
+        setMenu(null);
+        setZoomedCardId(null);
+    }
+
+    const performMove= (cardId, action, payload) => {
+        if (action === 'tap') {
+            const card = gameState.board.find(card => card.id === cardId);
+            const newRot = card.rotation === 0 ? 90 : 0;
+            socket.emit("card_update", {id: cardId, changes: { rotation: newRot }});
+        } else if (action === 'top') {
+            socket.emit('move_zone', {cardId, targetZone: 'library', position: 'top'})
+        } else  if (action === 'bottom') {
+            socket.emit('move_zone', {cardId, targetZone: 'library', position: 'bottom'})
+        } else if( action === 'position') {
+            socket.emit('move_zone', {cardId, targetZone: 'library', position: payload})
+        } else {
+            socket.emit('move_zone', {cardId, targetZone: action})
+        }
+    }
+
     return (
         <div
             style={{
-                background: "#1a1a1a",
+                background: "url(background.jpg)",
+                backgroundSize: "cover",
+                backgroundRepeat: "no-repeat",
+                backgroundPosition: "center center",
                 height: "100vh",
                 width: "100vw",
                 display: "flex",
@@ -83,7 +111,7 @@ export default function Hand({ gameState, socket }) {
                     overflow: zoomedCardId ? "hidden" : "auto",
                 }}
             >
-
+                <AnimatePresence>
                 {   viewMode === 'hand' ? (
                     gameState.hand.map((card, index) =>(
                         <CardItem key={index} card={card} onPlay={playCard} onZoom={handleLongPress} isZoomed={zoomedCardId === card.id} />
@@ -92,6 +120,7 @@ export default function Hand({ gameState, socket }) {
                     <CardItem key={index} card={token} onPlay={playToken} onZoom={handleLongPress} isZoomed={zoomedCardId === token.id} />
                     ))}
                 <div style={{minWidth: '150px', height: '1px'}}/>
+                </AnimatePresence>
             </div>
             {zoomedCardId && (
                 <div
@@ -108,31 +137,55 @@ export default function Hand({ gameState, socket }) {
                     }}
                 />
             )}
-            <motion.button
-                whileTap={{scale: 0.9}}
-                onClick={() => {socket.emit('draw_card')}}
-                style={{
-                    position: "absolute",
-                    bottom: "30px",
-                    right: "30px",
-                    width: "80px",
-                    height: "80px",
-                    borderRadius: "50%",
-                    backgroundColor: "#3498db",
-                    boxShadow: '0 4px 15px rgba(0, 0, 0, 0,5)',
-                    color: "white",
-                    fontSize: "14px",
-                    fontWeight: "bold",
-                    zIndex: 1000,
-                    cursor: "pointer",
-                }}
-            >
-                DRAW
-                <br/>
-                <span style={{ fontSize: '10px', opacity: 0.8}}>
+            {zoomedCardId ?
+                <motion.button
+                    whileTap={{scale: 0.9}}
+                    onClick={() => {setMenu(zoomedCardId)}}
+                    style={{
+                        position: "absolute",
+                        bottom: "30px",
+                        right: "30px",
+                        width: "80px",
+                        height: "80px",
+                        borderRadius: "50%",
+                        backgroundColor: "#3498db",
+                        boxShadow: '0 4px 15px rgba(0, 0, 0, 0,5)',
+                        color: "white",
+                        fontSize: "14px",
+                        fontWeight: "bold",
+                        zIndex: 1000,
+                        cursor: "pointer",
+                    }}
+                >
+                    Action
+                </motion.button>
+                :
+                <motion.button
+                    whileTap={{scale: 0.9}}
+                    onClick={() => {socket.emit('draw_card')}}
+                    style={{
+                        position: "absolute",
+                        bottom: "30px",
+                        right: "30px",
+                        width: "80px",
+                        height: "80px",
+                        borderRadius: "50%",
+                        backgroundColor: "#3498db",
+                        boxShadow: '0 4px 15px rgba(0, 0, 0, 0,5)',
+                        color: "white",
+                        fontSize: "14px",
+                        fontWeight: "bold",
+                        zIndex: 1000,
+                        cursor: "pointer",
+                    }}
+                >
+                    DRAW
+                    <br/>
+                    <span style={{ fontSize: '10px', opacity: 0.8}}>
                     ({gameState.library ? gameState.library.length : 0})
                 </span>
-            </motion.button>
+                </motion.button>
+            }
             <motion.button
                 whileTap={{scale: 0.9}}
                 onClick={() => {setViewMode((prev) => prev === 'hand' ? 'token' : 'hand')}}
@@ -154,6 +207,16 @@ export default function Hand({ gameState, socket }) {
                 >
                 {viewMode === 'hand' ? "Tokens" : "Hand"}
             </motion.button>
+            <AnimatePresence>
+                {menu && (
+                    <ContextMenu
+                        x={window.innerWidth - 200}
+                        y={window.innerHeight - 450}
+                        onClose={() => {setMenu(null)}}
+                        onAction={handleAction}
+                    />
+            )}
+            </AnimatePresence>
         </div>
     )
 }
@@ -224,6 +287,7 @@ function CardItem({ card, index, onPlay, onZoom, isZoomed }) {
                 opacity: 1,
                 zIndex: isZoomed ? 999 : index,
             }}
+            exit={{ y:-100, opacity: 0 }}
             style={{
                 minWidth: '200px',
                 height: '280px',

@@ -4,14 +4,16 @@ import useLongPress from "./useLongPress.js";
 
 export default function Card({ data, socket, onContextMenu }) {
     const [rotation, setRotation] = useState(data.rotation || 0);
-    const [zIndex, setZIndex] = useState(1);
+    const [zIndex, setZIndex] = useState(0);
 
     const isDragging = useRef(false);
 
     useEffect(() => {
+        console.log(data);
         // eslint-disable-next-line react-hooks/set-state-in-effect
+        setZIndex(data.zIndex);
         setRotation(data.rotation);
-    }, [data.rotation]);
+    }, [data.rotation, data.zIndex]);
 
     const handleTap = () => {
 
@@ -49,12 +51,15 @@ export default function Card({ data, socket, onContextMenu }) {
             drag
             dragMomentum={false}
 
+            whileDrag={{scale: 1.1}}
+            whileTap={{scale: 1.1}}
+
             onDragStart={() => {
                 isDragging.current = true;
                 setZIndex(100)
             }}
             onDragEnd={(event) => {
-                setZIndex(1);
+                setZIndex(data.zIndex);
 
                 const rect = event.target.getBoundingClientRect();
                 socket.emit('card_update', {
