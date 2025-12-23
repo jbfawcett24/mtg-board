@@ -1,7 +1,7 @@
 import { useState } from "react";
 import ContextMenu from "./contextMenu.jsx";
 
-export default function ZoneViewer({title, cards, onClose, socket, onMove}) {
+export default function ZoneViewer({title, cards, onClose, onMove}) {
     const [menuState, setMenuState] = useState(null);
 
     const handleContextMenu = (e, cardId) => {
@@ -30,7 +30,7 @@ export default function ZoneViewer({title, cards, onClose, socket, onMove}) {
             alignItems: "center",
             padding: '20px'
         }}>
-            <div style={{ display: "flex", justifyContent: "space-between", width: "100%", maxWidth: '800px', color: "white", marginBototm: "20px" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", width: "100%", maxWidth: '1000px', color: "white", marginBototm: "20px" }}>
                 <h2>{title} ({cards.length})</h2>
                 <button onClick={onClose} style={{padding: '10px 20px', cursor: 'pointer', backgroundColor: '#e74c3c', border: 'none', color: 'white', borderRadius: '4px'}}>
                     Close
@@ -45,7 +45,7 @@ export default function ZoneViewer({title, cards, onClose, socket, onMove}) {
                 justifyContent: "center",
                 overflowY: 'auto',
                 width: '100%',
-                maxWidth: '1000px',
+                maxWidth: '1500px',
                 paddingBottom: '50px',
             }}>
                 {cards.map((card) => (
@@ -55,7 +55,7 @@ export default function ZoneViewer({title, cards, onClose, socket, onMove}) {
                         <img
                             src={card.imageUrl}
                             alt={card.name}
-                            style={{width: '140px', borderRadius: '6px', cursor: 'context-menu'}}
+                            style={{width: '150px', borderRadius: '6px', cursor: 'context-menu'}}
                         />
                     </div>
                 ))}

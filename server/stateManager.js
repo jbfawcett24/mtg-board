@@ -4,7 +4,7 @@ const path = require('path');
 const { loadDeck, loadTokens } = require("./deckLoader");
 
 // 1. Add 'async' keyword
-async function setGameState(deckName) {
+async function setGameState(deckName, deckPath) {
     let gameState = {
         commander: [],
         library: [],
@@ -18,9 +18,11 @@ async function setGameState(deckName) {
     };
 
     // 2. Use Promise.all to wait for both files to load
+    const fullFolderPath = path.join(deckPath, deckName);
+
     const [deckCards, tokenCards] = await Promise.all([
-        loadDeck(path.join(deckName)),
-        loadTokens(path.join(deckName))
+        loadDeck(deckName, fullFolderPath),
+        loadTokens(deckName, fullFolderPath)
     ]);
 
     gameState.theme = deckCards.theme;

@@ -1,19 +1,46 @@
 {
-  "name": "server",
+  "name": "mtg-board",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "MTG Board Game",
+  "main": "main-electron.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "electron .",
+    "dist:linux": "electron-builder --linux",
+    "dist:win": "electron-builder --win",
+    "dist:all": "electron-builder -lw"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "commonjs",
   "dependencies": {
     "axios": "^1.13.2",
     "cors": "^2.8.5",
     "express": "^5.2.1",
     "socket.io": "^4.8.1"
+  },
+  "devDependencies": {
+    "electron-builder": "^26.0.12"
+  },
+  "build": {
+    "appId": "com.mtgboard.app",
+    "productName": "MTG Board",
+    "files": [
+      "package.json",
+      "main-electron.js",
+      "server.js",
+      "index.js",
+      "deckLoader.js",
+      "stateManager.js",
+      "pathHandler.js",
+      {
+        "from": "../client/dist",
+        "to": "client/dist",
+        "filter": ["**/*"]
+      }
+    ],
+    "linux": {
+      "target": "AppImage",
+      "category": "Game"
+    },
+    "win": {
+      "target": "nsis"
+    }
   }
 }

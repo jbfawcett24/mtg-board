@@ -4,8 +4,7 @@ const {resolve} = require("node:path");
 const path = require("node:path");
 const {resolvePath} = require("./pathHandler");
 
-async function getDeckList() {
-    const deckPath = resolvePath("/app/decks");
+async function getDeckList(deckPath) {
 
     const decks = fs.readdirSync(deckPath, {withFileTypes: true})
         .filter(folder => folder.isDirectory())
@@ -49,10 +48,9 @@ async function getDeckList() {
     return returnDecks;
 }
 
-async function loadDeck(deckName) {
+async function loadDeck(deckName, folderPath) {
     console.log(`Loading deck: ${deckName}...`);
 
-    const folderPath = path.join(resolvePath("/app/decks"), deckName);
     const filePath = path.join(folderPath, 'deck.txt');
 
     const fileContent = fs.readFileSync(filePath, 'utf-8');
@@ -182,8 +180,7 @@ async function loadDeck(deckName) {
     return finalDeck;
 }
 
-async function loadTokens(deckName) {
-    const folderPath = path.join(resolvePath("/app/decks"), deckName);
+async function loadTokens(deckName, folderPath) {
     const filePath = path.join(folderPath, 'tokens.txt');
 
     const fileContent = fs.readFileSync(filePath, 'utf-8');
