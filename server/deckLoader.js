@@ -1,12 +1,11 @@
 const fs = require('fs');
 const axios = require('axios');
-const config = require('../config.json');
 const {resolve} = require("node:path");
 const path = require("node:path");
 const {resolvePath} = require("./pathHandler");
 
 async function getDeckList() {
-    const deckPath = resolvePath(config.deckPath);
+    const deckPath = resolvePath("/app/decks");
 
     const decks = fs.readdirSync(deckPath, {withFileTypes: true})
         .filter(folder => folder.isDirectory())
@@ -53,7 +52,7 @@ async function getDeckList() {
 async function loadDeck(deckName) {
     console.log(`Loading deck: ${deckName}...`);
 
-    const folderPath = path.join(resolvePath(config.deckPath), deckName);
+    const folderPath = path.join(resolvePath("/app/decks"), deckName);
     const filePath = path.join(folderPath, 'deck.txt');
 
     const fileContent = fs.readFileSync(filePath, 'utf-8');
@@ -184,7 +183,7 @@ async function loadDeck(deckName) {
 }
 
 async function loadTokens(deckName) {
-    const folderPath = path.join(resolvePath(config.deckPath), deckName);
+    const folderPath = path.join(resolvePath("/app/decks"), deckName);
     const filePath = path.join(folderPath, 'tokens.txt');
 
     const fileContent = fs.readFileSync(filePath, 'utf-8');

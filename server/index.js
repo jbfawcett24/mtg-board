@@ -5,8 +5,6 @@ const cors = require('cors');
 const { loadDeck, loadTokens, getDeckList} = require('./deckLoader');
 const path = require('path');
 const { setGameState } = require("./stateManager");
-
-const config = require("../config.json");
 const {homedir} = require("node:os");
 const {resolvePath} = require("./pathHandler");
 
@@ -16,7 +14,7 @@ app.use(cors());
 
 app.use(express.static(path.join(__dirname, '../client/dist')));
 
-const absoluteDeckPath = resolvePath(config.deckPath);
+const absoluteDeckPath = resolvePath("/app/decks");
 console.log(`Gettings decks from ${absoluteDeckPath}`);
 app.use("/decks", express.static(absoluteDeckPath));
 
@@ -191,6 +189,31 @@ io.on('connection', (socket) => {
         gameState.library.sort(() => Math.random() - 0.5);
 
         io.emit('update_state', gameState);
+    })
+
+    socket.on("add_counter", ({id, changes}) => {
+        const checkZones = ["commander", "board","tokenBoard"];
+
+        let foundCard = null;
+        for (const zone of checkZones) {
+            // Safety check: ensure the zone actually exists in gameState
+            if (gameState[zone]) {
+                const card = gameState[zone].find(c => c.id === id);
+
+                // 2. If we found it, save it and STOP looking
+                if (card) {
+                    foundCard = card;
+                    break;
+                }
+            }
+        }
+
+        console.log(foundCard.id);
+
+        foundCard.power = (foundCard.power || 0) + changes.power
+        foundCard.toughness = (foundCard.toughness || 0) + changes.toughness;
+
+        io.emit("update_state", gameState);
     })
 
     socket.on('disconnect', () => {

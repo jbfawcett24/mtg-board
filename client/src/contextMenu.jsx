@@ -12,9 +12,23 @@ export default function ContextMenu({ x, y, onAction, onClose, options}) {
         {label: "Bottom of library", action: "bottom"},
         {label: "Top of Stack", action: "topStack"},
         {label: "Bottom of Stack", action: "bottomStack"},
+        {label: "Add Counter", action: "addCounter"}
     ];
 
     const menuOptions = options || defaultOptions;
+
+    const estimatedHeight = menuOptions.length * 38 + 20;
+    const isOverflowing = (y + estimatedHeight) > window.innerHeight;
+
+    const positionStyles  = isOverflowing ? {
+        bottom: window.innerHeight -y,
+        top: "auto",
+        transformOrigin: "botom left"
+    } : {
+        top: y,
+        bottom: "auto",
+        transformOrigin: "top left"
+    }
 
     const handleOptionClick = (opt) => {
         let finalAction = opt.action;
@@ -49,9 +63,9 @@ export default function ContextMenu({ x, y, onAction, onClose, options}) {
                 animate={{ opacity: 1, scale: 1, height: "auto"}}
                 exit={{ opacity: 1, height: 0 }}
                 style={{
-                    transformOrigin: "top left",
+                    ...positionStyles,
+
                     position: 'absolute',
-                    top: y,
                     left: x,
                     backgroundColor: '#222',
                     border: '1px solid #444',
@@ -62,7 +76,7 @@ export default function ContextMenu({ x, y, onAction, onClose, options}) {
                     gap: "2px",
                     boxShadow: "0 10px 30px rgba(0, 0, 0, 0.5)",
                     zIndex: 9999,
-                    minWidth: "160px",
+                    minWidth: "110px",
                     overflow: "hidden"
                 }}
             >
@@ -79,7 +93,7 @@ export default function ContextMenu({ x, y, onAction, onClose, options}) {
                             cursor: "pointer",
                             borderRadius: "4px",
                             borderLeft: option.color ? `4px solid ${option.color}` : '4px solid transparent',
-                            fontSize: "14px",
+                            fontSize: "11px",
                         }}
                         onMouseEnter={(e) => e.target.style.backgroundColor = '#333'}
                         onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}

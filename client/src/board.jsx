@@ -3,11 +3,14 @@ import {useEffect, useState} from "react"
 import ContextMenu from "./contextMenu.jsx"
 import ZoneViewer from "./ZoneViewer.jsx";
 import DeckSelect from "./DeckSelect.jsx";
+import {motion, AnimatePresence} from "framer-motion";
+import CounterSelector from "./CounterSelector.jsx";
 
 export default function Board({ gameState, socket}) {
     const [menuState, setMenuState] = useState(null)
     const [viewingZone, setViewingZone] = useState(null)
     const [deckSelect, setDeckSelect] = useState(null)
+    const [addCounter, setAddCounter] = useState(null)
 
     const bgImage = gameState.theme?.background || "/background.jpg"
     const cardBackImg = gameState.theme?.cardBack || "/card-back.jpg"
@@ -78,10 +81,19 @@ export default function Board({ gameState, socket}) {
                 socket.emit('card_update', {id: cardId, changes: {zIndex: 1}})
                 break;
             }
+            case "addCounter":
+                setAddCounter(cardId);
+                break;
             default:
                 socket.emit('move_zone', {cardId, targetZone: action})
                 break;
         }
+    }
+
+    const handleAddCounter = (power, toughness) => {
+        console.log(`Adding Counter: ${power}/${toughness} to ${addCounter}`);
+        socket.emit('add_counter', {id: addCounter, changes: {power: power, toughness: toughness}});
+        setAddCounter(null);
     }
 
     useEffect(() => {
@@ -104,26 +116,44 @@ export default function Board({ gameState, socket}) {
             style={{
                 width: "100vw",
                 height: "100vh",
-                backgroundImage: `url(${bgImage})`,
-                backgroundSize: "cover",
-                backgroundPosition: "center",
-                backgroundRepeat: "no-repeat",
                 position: "relative",
                 overflow: "hidden",
             }}
         >
+            <AnimatePresence>
+                <motion.div
+                    key={bgImage}
+                    initial={{opacity: 0}}
+                    animate={{opacity: 1}}
+                    exit={{opacity: 0}}
+                    transition={{duration: 0.8}}
+                    style={{
+                        position: "absolute",
+                        top: 0,
+                        left: 0,
+                        width: "100%",
+                        height: "100%",
+                        backgroundImage: `url(${bgImage})`,
+                        backgroundSize: "cover",
+                        backgroundPosition: "center",
+                        backgroundRepeat: "no-repeat",
+                        zIndex: 0 // Ensure it sits behind everything
+                    }}
+                />
+            </AnimatePresence>
             <div
             style={{
                 position: "absolute",
                 right: '10px',
-                top: '7%',
+                top: '5%',
                 display: 'flex',
                 flexDirection: 'column',
                 gap: '20px',
                 zIndex: 100
             }}>
-                <div onClick={() => {setViewingZone('library')}} style={{
-                    width: '210px',
+                <div onClick={() => {setViewingZone('library')}}
+                     style={{
+                    width: '150px',
                     aspectRatio: '63/88',
                     border: '2px dashed white',
                     borderRadius: '10px',
@@ -171,7 +201,7 @@ export default function Board({ gameState, socket}) {
                     onAction={handleMenuAction}
                     onClose={() => {setMenuState(null)}}
                     options = {menuState.cardId === "LIBRARY_MENU" ? [
-                        {label: "Shuffle Library", action: "shuffle"},
+                        {label: "Shuffle", action: "shuffle"},
                         {label: "Reset Game", action: "reset"},
                     ] : undefined}
                 />
@@ -192,12 +222,18 @@ export default function Board({ gameState, socket}) {
                     onClose={() => {setDeckSelect(null)}}
                 />
             )}
+            {addCounter && (
+                <CounterSelector
+                    onClose={() => {setAddCounter(null)}}
+                    onSubmit={handleAddCounter}
+                />
+            )}
         </div>
     )
 }
 
 const zoneStyle = {
-    width: '210px',
+    width: '150px',
     aspectRatio: '3/4',
     border: '2px dashed white',
     borderRadius: '8px',

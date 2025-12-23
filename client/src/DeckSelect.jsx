@@ -19,7 +19,6 @@ export default function DeckSelect({socket, deckList, onClose}) {
             zIndex: 2000,
             padding: "20px",
         }}>
-            <h2>Select Deck</h2>
             <ul
                 style={{
                     display: "flex"
@@ -124,8 +123,8 @@ function HoloCard({imgPath, name, onDeckSelect}) {
 
 const styles = {
     cardContainer: {
-        width: "300px",
-        height: "420px",
+        width: "210px",
+        height: "294px",
         position: "relative",
         borderRadius: "12px", // rounded-xl
         backgroundColor: "transparent", // bg-gray-900

@@ -5,6 +5,5 @@ services:
     ports:
       - "3001:3001"
     volumes:
-      - ./server/deck.txt:/app/server/deck.txt
-      - ./server/tokens.txt:/app/server/tokens.txt
+      - ./decks/:/app/decks
     restart: unless-stopped
