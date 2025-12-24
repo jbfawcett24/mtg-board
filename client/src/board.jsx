@@ -97,7 +97,6 @@ export default function Board({ gameState, socket}) {
     }
 
     useEffect(() => {
-        console.log(gameState);
         const handleDeckSelect = (decks) => {
             setDeckSelect(decks);
             console.log(deckSelect);
@@ -108,7 +107,7 @@ export default function Board({ gameState, socket}) {
         return () => {
             socket.off('select_deck', handleDeckSelect);
         };
-    }, [deckSelect, gameState, socket]);
+    }, [deckSelect, socket]);
 
     return (
         <div
@@ -188,7 +187,7 @@ export default function Board({ gameState, socket}) {
             ))}
             {gameState.tokenBoard && gameState.tokenBoard.map((card) => (
                 <Card
-                    key={card.id} // FIX: Add unique Key
+                    key={card.id}
                     data={card}
                     socket={socket}
                     onContextMenu={handleContextMenu}

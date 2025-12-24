@@ -57,14 +57,13 @@ export default function useLongPress({ onLongPress, onTap, delay = 500 }) {
         }
 
         if(!isLongPress.current && !isScrolling.current) {
-            onTap && onTap();
+            onTap && onTap(event);
         }
     }
 
     return {
         onMouseDown: start,
         onMouseUp: stop,
-        onMouseLeave: stop,
         onTouchStart: start,
         onTouchEnd: stop,
         onTouchMove: move,

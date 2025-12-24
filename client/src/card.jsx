@@ -11,21 +11,33 @@ export default function Card({ data, socket, onContextMenu }) {
     useEffect(() => {
         // eslint-disable-next-line react-hooks/set-state-in-effect
         setZIndex(data.zIndex);
-        setRotation(data.rotation);
-    }, [data.rotation, data.zIndex]);
 
-    const handleTap = () => {
+    }, [data.zIndex]);
+    useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setRotation(data.rotation);
+    }, [data.rotation])
+
+    const handleTap = (event) => {
+        if (event) {
+            if (event.preventDefault) event.preventDefault();
+            if (event.stopPropagation) event.stopPropagation();
+            if (event.nativeEvent) event.nativeEvent.stopImmediatePropagation();
+        }
+
+        console.log(event)
 
         if (isDragging.current) return;
 
-        const newRotation = rotation === 0 ? 90 : 0;
-        setRotation(newRotation);
+        setRotation(prev => {
+            const newRotation = prev === 0 ? 90 : 0;
 
-        socket.emit('card_update', {
-            id: data.id,
-            changes: {
-                rotation: newRotation,
-            }
+            socket.emit('card_update', {
+                id: data.id,
+                changes: { rotation: newRotation }
+            });
+
+            return newRotation;
         });
     };
 
@@ -79,10 +91,9 @@ export default function Card({ data, socket, onContextMenu }) {
 
             onContextMenu={(e) => {
                 e.preventDefault();
+                e.stopPropagation();
                 if (onContextMenu) onContextMenu(e, data.id);
             }}
-
-            onTap={handleTap}
 
             style={{
                 position: "absolute",
@@ -90,7 +101,11 @@ export default function Card({ data, socket, onContextMenu }) {
                 zIndex: zIndex,
                 cursor: "grab",
                 // Ensure the div wraps tight around the content
-                display: "inline-block"
+                display: "inline-block",
+                touchAction: "none",
+                WebkitTapHighlightColor: "transparent",
+                userSelect: "none",
+                outline: "none",
             }}
         >
             {/* 1. The Card Image */}

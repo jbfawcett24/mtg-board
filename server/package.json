@@ -1,6 +1,6 @@
 {
   "name": "mtg-board",
-  "version": "1.0.0",
+  "version": "0.0.1",
   "description": "MTG Board Game",
   "main": "main-electron.js",
   "scripts": {

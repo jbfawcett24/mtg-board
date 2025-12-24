@@ -27,13 +27,17 @@ function createServer(staticPath, deckPath) {
 
     const SHARED_SECRET = "mtg2025"
 
-    let gameState;
-    const decks = getDeckList(deckPath).then((decks) => {
-        console.log(decks[0].name);
-        setGameState(decks[0].name, deckPath).then(initialDeck => {
-            gameState = initialDeck;
-            console.log("Initial game loaded")
-        });
+    let gameState = { // Initialize with empty defaults so it never crashes
+        board: [], hand: [], commander: [], exile: [], graveyard: [], library: [], tokenBoard: [], tokens: []
+    };
+
+    const decksPromise = getDeckList(deckPath).then((decks) => {
+        if(decks && decks.length >= 1) {
+            setGameState(decks[0].name, deckPath).then(initialDeck => {
+                gameState = initialDeck;
+                console.log("Initial game loaded")
+            });
+        }
     });
 
     io.use((socket, next) => {
@@ -42,16 +46,28 @@ function createServer(staticPath, deckPath) {
         else next(new Error('Not authorized'));
     });
 
-    io.on('connection', (socket) => {
+    io.on('connection', async (socket) => {
         console.log(`User connected: ${socket.id}`);
 
         socket.emit('update_state', gameState);
+
+        if (decksPromise) {
+            const decks = await decksPromise;
+            console.log("decks found, sending");
+            io.emit("decks_loaded", decks);
+        } else {
+            io.emit("no_decks");
+        }
 
         socket.on('card_update', ({id, changes}) => {
             let card = gameState.board.find(card => card.id === id);
 
             if(!card) {
                 card = gameState.tokenBoard.find(card => card.id === id);
+            }
+
+            if(!card) {
+                card = gameState.commander.find(card => card.id === id);
             }
 
             if (card) {
@@ -159,7 +175,7 @@ function createServer(staticPath, deckPath) {
         socket.on("reset_game", async () => {
 
             // 2. Await the deck list here
-            const currentDecks = await getDeckList();
+            const currentDecks = await getDeckList(deckPath);
 
             // 3. Send the actual data
             io.emit('select_deck', currentDecks);

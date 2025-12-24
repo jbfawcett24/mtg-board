@@ -5,6 +5,12 @@ const fs = require("node:fs");
 
 let mainWindow;
 
+app.commandLine.appendSwitch('touch-events', 'enabled');
+
+// Optional: Prevents native "pinch to zoom" if that interferes with your game
+app.commandLine.appendSwitch('disable-pinch');
+app.commandLine.appendSwitch('enable-viewport-meta-pinch', 'true');
+
 function startApp() {
     const staticPath = app.isPackaged
         ? path.join(__dirname, 'client/dist')   // Production: Inside the app
