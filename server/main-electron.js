@@ -1,4 +1,4 @@
-const {app, BrowserWindow } = require('electron');
+const {app, BrowserWindow, Menu } = require('electron');
 const path = require('path');
 const { createServer } = require('./server');
 const fs = require("node:fs");
@@ -28,8 +28,41 @@ function startApp() {
         console.log("Electron backend started on port 3001")
     });
 
-    mainWindow = new BrowserWindow({fullscreen: true});
+    const template = [
+        {
+            label: 'View',
+            submenu: [
+                { role: 'reload' },
+                { role: 'forceReload' },
+                { type: 'separator' },
+                { role: 'resetZoom' },
+                {
+                    label: 'Zoom In',
+                    // Force the shortcut to be Ctrl + Equal sign (no Shift needed)
+                    accelerator: 'CommandOrControl+=',
+                    role: 'zoomIn'
+                },
+                {
+                    label: 'Zoom Out',
+                    accelerator: 'CommandOrControl+-',
+                    role: 'zoomOut'
+                },
+                { role: 'togglefullscreen' }
+            ]
+        }
+    ];
+
+    const menu = Menu.buildFromTemplate(template);
+    Menu.setApplicationMenu(menu);
+
+
+    mainWindow = new BrowserWindow({fullscreen: true, webPreferences: {
+            zoomFactor: 1.0,
+            contextIsolation: false
+        }});
     mainWindow.loadURL('http://localhost:3001');
+    //mainWindow.webContents.setVisualZoomLevelLimits(-5, 5)
+
 }
 
 app.disableHardwareAcceleration();
