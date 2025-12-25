@@ -3,6 +3,37 @@ import ContextMenu from "./contextMenu.jsx";
 
 export default function ZoneViewer({title, cards, onClose, onMove}) {
     const [menuState, setMenuState] = useState(null);
+    const optionsByTitle = {
+        LIBRARY: [
+            { label: "Send to Hand", action: "hand" },
+            { label: "Send to Graveyard", action: "graveyard" },
+            { label: "Exile", action: "exile" },
+            { label: "Play to Board", action: "board" },
+            { label: "Top of library", action: "top" },
+            { label: "X from Top of library", action: "position" },
+            { label: "Bottom of library", action: "bottom" },
+        ],
+        GRAVEYARD: [
+            { label: "Send to Hand", action: "hand" },
+            { label: "Exile", action: "exile" },
+            { label: "Play to Board", action: "board" },
+            { label: "Top of library", action: "top" },
+            { label: "X from Top of library", action: "position" },
+            { label: "Bottom of library", action: "bottom" },
+        ],
+        EXILE: [
+            { label: "Send to Hand", action: "hand" },
+            { label: "Send to Graveyard", action: "graveyard" },
+            { label: "Play to Board", action: "board" },
+            { label: "Top of library", action: "top" },
+            { label: "X from Top of library", action: "position" },
+            { label: "Bottom of library", action: "bottom" },
+        ],
+    };
+
+    const options = optionsByTitle[title];
+    console.log(title);
+
 
     const handleContextMenu = (e, cardId) => {
         e.preventDefault();
@@ -50,7 +81,8 @@ export default function ZoneViewer({title, cards, onClose, onMove}) {
             }}>
                 {cards.map((card) => (
                     <div key={card.id}
-                    onContextMenu={(e) => handleContextMenu(e, card.id)}
+                    onClick={(e) => handleContextMenu(e, card.id)}
+                     onContextMenu={(e) => {handleContextMenu(e, card.id)}}
                     style={{position: 'relative'}}>
                         <img
                             src={card.imageUrl}
@@ -66,6 +98,7 @@ export default function ZoneViewer({title, cards, onClose, onMove}) {
                     y={menuState.y}
                     onAction={handleMenuAction}
                     onClose={() => {setMenuState(null)}}
+                    options={options}
                 />
             )}
         </div>

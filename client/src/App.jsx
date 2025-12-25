@@ -19,6 +19,7 @@ export default function App() {
 
     useEffect(() => {
         socket.on("update_state", (newState) => {
+            console.log(newState);
             setGameState(newState);
         })
 

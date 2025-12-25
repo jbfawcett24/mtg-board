@@ -105,14 +105,17 @@ async function loadDeck(deckName, folderPath) {
                 const key = `${card.set}:${card.collector_number}`;
 
                 let imageUrl;
+                let backUrl = null;
                 if(card.image_uris) {
                     imageUrl = card.image_uris.normal;
                 } else if(card.card_faces) {
                     imageUrl = card.card_faces[0].image_uris.normal;
+                    backUrl = card.card_faces[1].image_uris.normal;
                 }
 
                 const cardData = {
                     name: card.name,
+                    backUrl: backUrl,
                     imageUrl: imageUrl,
                     type: card.type_line,
                 }
@@ -229,8 +232,10 @@ async function loadTokens(deckName, folderPath) {
 
             // Handle Double-Faced Tokens (like The Ring)
             let imageUrl = card.image_uris?.normal;
+            let backUrl = null;
             if (!imageUrl && card.card_faces) {
                 imageUrl = card.card_faces[0].image_uris?.normal;
+                backUrl = card.card_faces[1].image_uris.normal;
             }
 
             return {

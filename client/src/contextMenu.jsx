@@ -1,21 +1,39 @@
 import { motion } from 'framer-motion';
+import {useState} from "react";
+import Popup from "./ResetGame.jsx";
 
-export default function ContextMenu({ x, y, onAction, onClose, options}) {
+export default function ContextMenu({ x, y, onAction, onClose, options, gameState, cardId}) {
+    const searchKeys = ["board", "commander", "tokenBoard"]
+    let card;
+
+    if(gameState) {
+        for(const key of searchKeys) {
+            // console.log(gameState);
+            // console.log(key)
+            if (gameState[key] && Array.isArray(gameState[key])) {
+                const found = gameState[key].find(c => c.id === cardId);
+
+                // 2. ERROR WAS HERE: "if (card) return card;"
+                // 3. FIX: Assign to outer variable and break loop
+                if (found) {
+                    card = found;
+                    break;
+                }
+            }
+        }
+    }
+
+
     const defaultOptions = [
-        {label: "Tap/ Untap", action: "tap"},
-        {label: "Return to Hand", action: "hand"},
-        {label: "Send to Graveyard", action: "graveyard"},
-        {label: "Exile", action: "exile"},
-        {label: "Play to Board", action: "board"},
-        {label: "Top of library", action: "top"},
-        {label: "X from Top of library", action: "position"},
-        {label: "Bottom of library", action: "bottom"},
+        ...(card?.backUrl ? [{ label: "Flip Card", action: "flipCard", color: "#5b68ed" }] : []),
+        {label: "Send to >", action: "moveTo"},
         {label: "Top of Stack", action: "topStack"},
         {label: "Bottom of Stack", action: "bottomStack"},
         {label: "Add Counter", action: "addCounter"}
     ];
 
     const menuOptions = options || defaultOptions;
+    console.log(options);
 
     const estimatedHeight = menuOptions.length * 38 + 20;
     const isOverflowing = (y + estimatedHeight) > window.innerHeight;
@@ -30,19 +48,10 @@ export default function ContextMenu({ x, y, onAction, onClose, options}) {
         transformOrigin: "top left"
     }
 
-    const handleOptionClick = (opt) => {
-        let finalAction = opt.action;
-        let payload = null
-
-        if (opt.action === "position") {
-            const input = window.prompt("Enter position from the top");
-            if (input === null) return;
-            payload = parseInt(input);
-            console.log(payload);
-            if(isNaN(payload)) return;
-        }
-
-        onAction(finalAction, payload);
+    const handleOptionClick = (e, opt) => {
+        e.preventDefault();
+        e.stopPropagation();
+        onAction(opt.action);
     }
 
     return (
@@ -83,7 +92,7 @@ export default function ContextMenu({ x, y, onAction, onClose, options}) {
                 {menuOptions.map((option, index) => (
                     <button
                         key={index}
-                        onClick={() => handleOptionClick(option)}
+                        onClick={(e) => handleOptionClick(e, option)}
                         style={{
                             background: "transparent",
                             border: "none",
@@ -94,6 +103,7 @@ export default function ContextMenu({ x, y, onAction, onClose, options}) {
                             borderRadius: "4px",
                             borderLeft: option.color ? `4px solid ${option.color}` : '4px solid transparent',
                             fontSize: "11px",
+                            textWrap: "nowrap",
                         }}
                         onMouseEnter={(e) => e.target.style.backgroundColor = '#333'}
                         onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}

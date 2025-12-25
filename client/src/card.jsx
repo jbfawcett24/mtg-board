@@ -55,9 +55,9 @@ export default function Card({ data, socket, onContextMenu }) {
         <motion.div
             {...gestureBind}
 
-            // Move all drag/animation props to this wrapper div
-            initial={{ x: data.x, y: data.y, rotate: data.rotation }}
-            animate={{ rotate: rotation }}
+            initial={{ x: data.x + 100, y: data.y + 100, rotate: data.rotation, opacity: 0 }}
+            animate={{ rotate: rotation, opacity: 1 }}
+            exit={{y: data.y - 100, rotate: 0, opacity: 0}}
 
             drag
             dragMomentum={false}
@@ -109,18 +109,20 @@ export default function Card({ data, socket, onContextMenu }) {
             }}
         >
             {/* 1. The Card Image */}
-            <img
-                src={data.imageUrl}
-                alt={data.name}
-                style={{
-                    width: "100%",
-                    borderRadius: "8px",
-                    display: "block", // Removes tiny gap at bottom of images
-                    // Prevent the browser's native ghost-image drag behavior
-                    pointerEvents: "none",
-                    userSelect: "none"
-                }}
-            />
+            {data.backUrl ? <FlipCard data={data}/> :
+                <img
+                    src={data.imageUrl}
+                    alt={data.name}
+                    style={{
+                        width: "100%",
+                        borderRadius: "8px",
+                        display: "block", // Removes tiny gap at bottom of images
+                        // Prevent the browser's native ghost-image drag behavior
+                        pointerEvents: "none",
+                        userSelect: "none"
+                    }}
+                />
+            }
 
             {/* 2. The Stats Overlay (Top Left) */}
             {hasStats && (
@@ -143,4 +145,47 @@ export default function Card({ data, socket, onContextMenu }) {
             )}
         </motion.div>
     )
+}
+
+function FlipCard({ data }) {
+    // Get isFlipped from the card data (sent from server)
+    const isFlipped = data.isFlipped || false;
+
+    return (
+        <div style={{ width: '100%', height: '100%', perspective: '1000px',aspectRatio: '2.5 / 3.5', }}>
+            <motion.div
+                animate={{ rotateY: isFlipped ? 180 : 0 }}
+                transition={{ duration: 0.6, type: "spring", stiffness: 260, damping: 20 }}
+                style={{
+                    width: '100%',
+                    height: '100%',
+                    position: 'relative',
+                    transformStyle: 'preserve-3d',
+                }}
+            >
+                {/* FRONT FACE */}
+                <div style={{
+                    position: 'absolute',
+                    width: '100%',
+                    height: '100%',
+                    backfaceVisibility: 'hidden',
+                    backgroundImage: `url(${data.imageUrl})`,
+                    backgroundSize: 'cover',
+                    borderRadius: '8px',
+                }} />
+
+                {/* BACK FACE */}
+                <div style={{
+                    position: 'absolute',
+                    width: '100%',
+                    height: '100%',
+                    backfaceVisibility: 'hidden',
+                    transform: 'rotateY(180deg)',
+                    backgroundImage: `url(${data.backUrl})`,
+                    backgroundSize: 'cover',
+                    borderRadius: '8px',
+                }} />
+            </motion.div>
+        </div>
+    );
 }
