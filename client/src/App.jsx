@@ -3,7 +3,7 @@ import {useState, useEffect} from "react";
 import Board from "./board.jsx";
 import Hand from "./hand.jsx";
 
-const socket  = io.connect("192.168.2.8:3001", {
+const socket  = io.connect({
     auth: {
         code: "mtg2025" // Must match SHARED_SECRET in server/index.js
     }
