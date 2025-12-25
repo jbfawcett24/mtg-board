@@ -7,6 +7,7 @@ export default function Hand({ gameState, socket }) {
     const [zoomedCardId, setZoomedCardId] = useState(null);
     const [viewMode, setViewMode] = useState('hand');
     const [menu, setMenu] = useState(null);
+    const [position, setPosition] = useState(null);
 
     const isCoolDown = useRef(false);
 
@@ -61,22 +62,76 @@ export default function Hand({ gameState, socket }) {
         console.log(action, payload);
         performMove(zoomedCardId, action, payload);
         setMenu(null);
-        setZoomedCardId(null);
+        if(action !== "flipCard") setZoomedCardId(null);
     }
 
-    const performMove= (cardId, action, payload) => {
-        if (action === 'tap') {
-            const card = gameState.board.find(card => card.id === cardId);
-            const newRot = card.rotation === 0 ? 90 : 0;
-            socket.emit("card_update", {id: cardId, changes: { rotation: newRot }});
-        } else if (action === 'top') {
-            socket.emit('move_zone', {cardId, targetZone: 'library', position: 'top'})
-        } else  if (action === 'bottom') {
-            socket.emit('move_zone', {cardId, targetZone: 'library', position: 'bottom'})
-        } else if( action === 'position') {
-            socket.emit('move_zone', {cardId, targetZone: 'library', position: payload})
-        } else {
-            socket.emit('move_zone', {cardId, targetZone: action})
+    const findCardById = (id) => {
+        const searchKeys = ["hand"]
+        let card;
+        for(const key of searchKeys) {
+            console.log(gameState);
+            console.log(key)
+            if (gameState[key] && Array.isArray(gameState[key])) {
+                const card = gameState[key].find(c => c.id === id);
+                if (card) return card;
+            }
+        }
+
+        return card;
+    }
+
+    const performMove= (cardId, action) => {
+        console.log(action);
+        switch(action) {
+            case "top":
+                socket.emit('move_zone', {cardId, targetZone: 'library', position: 'top'})
+                break;
+            case "bottom":
+                socket.emit('move_zone', {cardId, targetZone: 'library', position: 'bottom'});
+                break;
+            case "position":
+                setPosition({cardId: cardId, position: 0});
+                break;
+            case "topStack":
+            {
+                //find the highest number of cards
+                const zIndexNum = Math.max(gameState.tokenBoard.length, gameState.board.length) + 2;
+                console.log(`moving to position ${zIndexNum}`)
+                socket.emit('card_update', {id: cardId, changes:{zIndex: zIndexNum}});
+                break;
+            }
+            case "bottomStack":
+            {
+                socket.emit('card_update', {id: cardId, changes: {zIndex: 1}})
+                break;
+            }
+            case "moveTo":
+                console.log("moving");
+                setMenu(prev => {
+                    const updated = {
+                        ...prev,
+                        options: [
+                            {label: "Hand", action: "hand"},
+                            {label: "Graveyard", action: "graveyard"},
+                            {label: "Exile", action: "exile"},
+                            {label: "Top of library", action: "top"},
+                            {label: "X from Top of library", action: "position"},
+                            {label: "Bottom of library", action: "bottom"},
+                        ]
+                    };
+                    console.log("New State scheduled:", updated);
+                    return updated;
+                });
+                break;
+            case "flipCard": {
+                const card = findCardById(cardId);
+                console.log(card);
+                socket.emit('card_update', {id: cardId, changes: {isFlipped: !card?.isFlipped}});
+                break;
+            }
+            default:
+                socket.emit('move_zone', {cardId, targetZone: action})
+                break;
         }
     }
 
@@ -113,11 +168,11 @@ export default function Hand({ gameState, socket }) {
             >
                 <AnimatePresence>
                 {   viewMode === 'hand' ? (
-                    gameState.hand.map((card, index) =>(
-                        <CardItem key={index} card={card} onPlay={playCard} onZoom={handleLongPress} isZoomed={zoomedCardId === card.id} />
+                    gameState.hand.map((card) =>(
+                        <CardItem key={card.id} card={card} onPlay={playCard} onZoom={handleLongPress} isZoomed={zoomedCardId === card.id} />
                     )))
                 : gameState.tokenList.map((token, index) => (
-                    <CardItem key={index} card={token} onPlay={playToken} onZoom={handleLongPress} isZoomed={zoomedCardId === token.id} />
+                        <CardItem key={index} card={token} onPlay={playToken} onZoom={handleLongPress} isZoomed={zoomedCardId === token.id} />
                     ))}
                 <div style={{minWidth: '150px', height: '1px'}}/>
                 </AnimatePresence>
@@ -210,10 +265,20 @@ export default function Hand({ gameState, socket }) {
             <AnimatePresence>
                 {menu && (
                     <ContextMenu
-                        x={window.innerWidth - 200}
-                        y={window.innerHeight - 450}
+                        x={window.innerWidth - 150}
+                        y={window.innerHeight - 120}
                         onClose={() => {setMenu(null)}}
                         onAction={handleAction}
+                        gameState={gameState}
+                        cardId={zoomedCardId}
+                        options={[
+                            ...(findCardById(zoomedCardId).backUrl ? [{ label: "Flip Card", action: "flipCard", color: "#5b68ed" }] : []),
+                            {label: "Board", action: "board"},
+                            {label: "Graveyard", action: "graveyard"},
+                            {label: "Exile", action: "exile"},
+                            {label: "Top of library", action: "top"},
+                            {label: "Bottom of library", action: "bottom"},
+                        ]}
                     />
             )}
             </AnimatePresence>
@@ -222,6 +287,7 @@ export default function Hand({ gameState, socket }) {
 }
 
 function CardItem({ card, index, onPlay, onZoom, isZoomed }) {
+    console.log(`Render Card ${card.id}: Flipped = ${card.isFlipped}`);
     // --- 1. Holo Effect Logic ---
     const ref = useRef(null);
     const x = useMotionValue(0);
@@ -299,29 +365,49 @@ function CardItem({ card, index, onPlay, onZoom, isZoomed }) {
                 // We keep pan-x so the user can still scroll the hand horizontally
                 touchAction: 'pan-x',
                 cursor: 'pointer',
+                rotateX: rotateX,
+                rotateY: rotateY,
+                transformStyle: "preserve-3d",
             }}
         >
             <motion.div
-                // --- INNER CARD (Visuals & Rotation) ---
+                animate={{ rotateY: card.isFlipped ? 180 : 0 }}
+                transition={{ duration: 0.6, type: "spring", stiffness: 260, damping: 20 }}
                 style={{
-                    width: "100%",
-                    height: "100%",
-                    borderRadius: '12px',
-                    boxShadow: '-5px 5px 15px rgba(0, 0, 0, 0.5)',
-
-                    // Apply the background image here on the inner layer
+                    width: '100%',
+                    height: '100%',
+                    position: 'relative',
+                    transformStyle: 'preserve-3d',
+                }}
+            >
+                {/* FRONT FACE */}
+                <div style={{
+                    position: 'absolute',
+                    width: '100%',
+                    height: '100%',
+                    backfaceVisibility: 'hidden',
                     backgroundImage: `url(${card.imageUrl})`,
                     backgroundSize: "cover",
                     backgroundPosition: 'center',
-                    backgroundRepeat: 'no-repeat',
                     backgroundColor: "#333",
+                    borderRadius: '12px',
+                }} />
 
-                    // Apply 3D Rotations
-                    rotateX,
-                    rotateY,
-                    transformStyle: "preserve-3d",
-                }}
-            >
+                {/* BACK FACE */}
+                <div style={{
+                    position: 'absolute',
+                    width: '100%',
+                    height: '100%',
+                    backfaceVisibility: 'hidden',
+                    transform: 'rotateY(180deg)',
+                    backgroundImage: `url(${card.backUrl})`,
+                    backgroundSize: "cover",
+                    backgroundPosition: 'center',
+                    backgroundColor: "#333",
+                    borderRadius: '12px',
+                    border: "1px solid #555"
+                }} />
+            </motion.div>
                 {/* GLARE LAYER */}
                 <motion.div
                     style={{
@@ -346,7 +432,6 @@ function CardItem({ card, index, onPlay, onZoom, isZoomed }) {
                         border: "1px solid rgba(255,255,255,0.1)"
                     }}
                 />
-            </motion.div>
         </motion.div>
     )
 }

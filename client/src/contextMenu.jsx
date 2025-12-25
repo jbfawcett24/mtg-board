@@ -3,7 +3,7 @@ import {useState} from "react";
 import Popup from "./ResetGame.jsx";
 
 export default function ContextMenu({ x, y, onAction, onClose, options, gameState, cardId}) {
-    const searchKeys = ["board", "commander", "tokenBoard"]
+    const searchKeys = ["board", "commander", "tokenBoard", "hand"]
     let card;
 
     if(gameState) {
@@ -16,6 +16,7 @@ export default function ContextMenu({ x, y, onAction, onClose, options, gameStat
                 // 2. ERROR WAS HERE: "if (card) return card;"
                 // 3. FIX: Assign to outer variable and break loop
                 if (found) {
+                    console.log(found);
                     card = found;
                     break;
                 }

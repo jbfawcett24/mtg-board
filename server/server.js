@@ -70,7 +70,12 @@ function createServer(staticPath, deckPath) {
                 card = gameState.commander.find(card => card.id === id);
             }
 
+            if(!card) {
+                card = gameState.hand.find(card => card.id === id)
+            }
+
             if (card) {
+                console.log("card found, making changes");
                 Object.assign(card, changes);
                 io.emit('update_state', gameState);
             }
