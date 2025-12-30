@@ -35,6 +35,7 @@ export default function Popup({ onClose, content }) {
                     flexDirection: "column",
                     alignItems: "center",
                     justifyContent: "center",
+                    color: "white",
                 }}
             >
                 {content}

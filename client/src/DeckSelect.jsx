@@ -2,10 +2,11 @@ import { motion } from "framer-motion";
 import {useRef} from "react";
 import {useMotionTemplate, useMotionValue, useSpring, useTransform} from "framer-motion";
 
-export default function DeckSelect({socket, deckList, onClose}) {
+export default function DeckSelect({onDeckSelect, deckList, onClose}) {
     const handleClick = (deckName) => {
         console.log(deckName);
-        socket.emit('deck_selected', {deckName});
+
+        onDeckSelect(deckName);
         onClose();
     }
     return (
@@ -18,10 +19,13 @@ export default function DeckSelect({socket, deckList, onClose}) {
             backgroundColor: "rgba(0, 0, 0, 0.8)",
             zIndex: 2000,
             padding: "20px",
-        }}>
+        }}
+        onClick={() => {onClose()}}
+        >
             <ul
                 style={{
-                    display: "flex"
+                    display: "flex",
+                    flexWrap: "wrap",
                 }}
             >
                 {deckList.map((deck, index) => (
@@ -43,8 +47,8 @@ function HoloCard({imgPath, name, onDeckSelect}) {
     const xSpring = useSpring(x, { stiffness: 300, damping: 30});
     const ySpring = useSpring(y, { stiffness: 300, damping: 30});
 
-    const rotateX = useTransform(xSpring, [-0.5, 0.5], ["15deg", "-15deg"]);
-    const rotateY = useTransform(ySpring, [-0.5, 0.5], ["15deg", "-15deg"]);
+    const rotateX = useTransform(ySpring, [-0.5, 0.5], ["15deg", "-15deg"]);
+    const rotateY = useTransform(xSpring, [-0.5, 0.5], ["-15deg", "15deg"]);
 
     const glareX = useTransform(xSpring, [-0.5, 0.5], ["100%", "0%"]);
     const glareY = useTransform(ySpring, [-0.5, 0.5], ["100%", "0%"]);

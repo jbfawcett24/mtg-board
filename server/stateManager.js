@@ -2,6 +2,7 @@
 const path = require('path');
 // Make sure these are imported correctly as you had them
 const { loadDeck, loadTokens } = require("./deckLoader");
+const {networkInterfaces} = require("node:os");
 
 // 1. Add 'async' keyword
 async function setGameState(deckName, deckPath) {
@@ -46,4 +47,32 @@ async function setGameState(deckName, deckPath) {
     return gameState;
 }
 
-module.exports = { setGameState };
+function getLocalIp() {
+    const interfaces = networkInterfaces();
+
+    for (const name of Object.keys(interfaces)) {
+        for (const iface of interfaces[name]) {
+
+            // 1. Must be IPv4 and not internal (localhost)
+            if (iface.family === 'IPv4' && !iface.internal) {
+
+                // 2. Filter out Virtual Adapters by Name
+                const lowerName = name.toLowerCase();
+                if (
+                    lowerName.includes("virtual") ||
+                    lowerName.includes("vmware") ||
+                    lowerName.includes("wsl") ||     // Windows Subsystem for Linux
+                    lowerName.includes("vethernet")  // Hyper-V
+                ) {
+                    continue;
+                }
+
+                // If it passes all checks, it's likely your real LAN IP
+                return iface.address;
+            }
+        }
+    }
+    return 'localhost'; // Fallback
+}
+
+module.exports = { setGameState, getLocalIp };

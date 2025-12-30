@@ -10,6 +10,11 @@ async function getDeckList(deckPath) {
         .filter(folder => folder.isDirectory())
         .map(folder => folder.name);
 
+    if(!decks || decks.length === 0) {
+        console.log("No decks found in directory.");
+        return [];
+    }
+
     const commanders = [];
 
     decks.forEach(deck => {
@@ -31,6 +36,10 @@ async function getDeckList(deckPath) {
     })
 
     console.log("Sending to Scryfall:", JSON.stringify({ identifiers: identifiers }, null, 2));
+
+    if(identifiers.length < 0){
+        return {};
+    }
 
     const response = await axios.post("https://api.scryfall.com/cards/collection", {identifiers: identifiers});
 

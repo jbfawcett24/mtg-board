@@ -4,10 +4,10 @@ const { Server } = require('socket.io');
 const cors = require("cors");
 const path = require("path");
 const {getDeckList} = require("./deckLoader");
-const {setGameState} = require("./stateManager");
+const {setGameState, getLocalIp} = require("./stateManager");
+const { exec } = require("child_process");
 
-
-function createServer(staticPath, deckPath) {
+async function createServer(staticPath, deckPath) {
     const app = express();
     app.use(cors());
 
@@ -31,7 +31,7 @@ function createServer(staticPath, deckPath) {
         board: [], hand: [], commander: [], exile: [], graveyard: [], library: [], tokenBoard: [], tokens: []
     };
 
-    const decksPromise = getDeckList(deckPath).then((decks) => {
+    let decks = await getDeckList(deckPath).then((decks) => {
         if(decks && decks.length >= 1) {
             setGameState(decks[0].name, deckPath).then(initialDeck => {
                 gameState = initialDeck;
@@ -51,13 +51,23 @@ function createServer(staticPath, deckPath) {
 
         socket.emit('update_state', gameState);
 
-        if (decksPromise) {
-            const decks = await decksPromise;
+        if (decks) {
             console.log("decks found, sending");
             io.emit("decks_loaded", decks);
         } else {
             io.emit("no_decks");
         }
+
+        socket.on("refresh_decks", async () => {
+            const foundDecks = await getDeckList(deckPath);
+            if (foundDecks && foundDecks.length > 0) {
+                // gameState = await setGameState(foundDecks[0].name, deckPath);
+                // console.log("Initial game loaded from refresh");
+                io.emit("decks_loaded", {decks: foundDecks, ip: getLocalIp()});
+            } else {
+                io.emit("no_decks");
+            }
+        })
 
         socket.on('card_update', ({id, changes}) => {
             let card = gameState.board.find(card => card.id === id);
@@ -222,6 +232,48 @@ function createServer(staticPath, deckPath) {
             foundCard.toughness = (foundCard.toughness || 0) + changes.toughness;
 
             io.emit("update_state", gameState);
+        })
+
+        socket.on("add_generic", ({id, num}) => {
+            const checkZones = ["commander", "board","tokenBoard"];
+
+            let foundCard = null;
+            for (const zone of checkZones) {
+                // Safety check: ensure the zone actually exists in gameState
+                if (gameState[zone]) {
+                    const card = gameState[zone].find(c => c.id === id);
+
+                    // 2. If we found it, save it and STOP looking
+                    if (card) {
+                        foundCard = card;
+                        break;
+                    }
+                }
+            }
+
+            foundCard.counters = (foundCard.counters || 0) + num;
+
+            io.emit("update_state", gameState);
+        })
+
+        socket.on("open_folder", () => {
+            let command;
+            switch (process.platform) {
+                case 'darwin': // MacOS
+                    command = `open "${deckPath}"`;
+                    break;
+                case "win32": // Windows
+                    command = `start "" "${deckPath}"`;
+                    break;
+                default: // Linux
+                    command = `xdg-open "${deckPath}"`;
+                    break;
+            }
+            exec(command, (error) => {
+                if (error) {
+                    console.error("Could not open folder:", error);
+                }
+            });
         })
 
         socket.on('disconnect', () => {

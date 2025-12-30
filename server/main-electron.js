@@ -11,7 +11,7 @@ app.commandLine.appendSwitch('touch-events', 'enabled');
 app.commandLine.appendSwitch('disable-pinch');
 app.commandLine.appendSwitch('enable-viewport-meta-pinch', 'true');
 
-function startApp() {
+async function startApp() {
     const staticPath = app.isPackaged
         ? path.join(__dirname, 'client/dist')   // Production: Inside the app
         : path.join(__dirname, '../client/dist');
@@ -23,7 +23,7 @@ function startApp() {
         fs.mkdirSync(deckPath, {recursive: true});
     }
 
-    const server = createServer(staticPath, deckPath);
+    const server = await createServer(staticPath, deckPath);
     server.listen(3001, '0.0.0.0', () => {
         console.log("Electron backend started on port 3001")
     });
@@ -34,6 +34,7 @@ function startApp() {
             submenu: [
                 { role: 'reload' },
                 { role: 'forceReload' },
+                { role: 'toggleDevTools' },
                 { type: 'separator' },
                 { role: 'resetZoom' },
                 {
@@ -56,7 +57,9 @@ function startApp() {
     Menu.setApplicationMenu(menu);
 
 
-    mainWindow = new BrowserWindow({fullscreen: true, webPreferences: {
+    mainWindow = new BrowserWindow({fullscreen: true,
+        icon: path.join(__dirname, 'build', 'icon256.png'),
+        webPreferences: {
             zoomFactor: 1.0,
             contextIsolation: false
         }});

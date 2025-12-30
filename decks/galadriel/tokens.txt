@@ -1,6 +1,0 @@
-Beast [tltc]
-Bird [tltc]
-Elf Warrior [tltc]
-Food [tltr]
-The Ring [tltr]
-Treasure [tltr]

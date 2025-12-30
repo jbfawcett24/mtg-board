@@ -50,6 +50,7 @@ export default function Card({ data, socket, onContextMenu }) {
     })
 
     const hasStats = data.power !== undefined || data.toughness !== undefined;
+    const hasCounter = data.counters !== undefined;
 
     return (
         <motion.div
@@ -141,6 +142,23 @@ export default function Card({ data, socket, onContextMenu }) {
                     pointerEvents: "none" // Let clicks pass through to the card
                 }}>
                     {data.power || 0}/{data.toughness || 0}
+                </div>
+            )}
+            {hasCounter && (
+                <div style={{
+                    position: "absolute",
+                    top: "30%",
+                    left: "calc(50% - 14px)",
+                    backgroundColor: "rgba(0, 0, 0, 0.85)",
+                    color: "white",
+                    padding: "2px 6px",
+                    borderRadius: "4px",
+                    fontSize: "14px",
+                    fontWeight: "bold",
+                    boxShadow: "0 2px 4px rgba(0,0,0,0.5)",
+                    pointerEvents: "none"
+                }}>
+                    {data.counters}
                 </div>
             )}
         </motion.div>

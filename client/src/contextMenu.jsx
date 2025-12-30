@@ -28,9 +28,11 @@ export default function ContextMenu({ x, y, onAction, onClose, options, gameStat
     const defaultOptions = [
         ...(card?.backUrl ? [{ label: "Flip Card", action: "flipCard", color: "#5b68ed" }] : []),
         {label: "Send to >", action: "moveTo"},
+        {label: "View Card", action: "zoomCard"},
         {label: "Top of Stack", action: "topStack"},
         {label: "Bottom of Stack", action: "bottomStack"},
-        {label: "Add Counter", action: "addCounter"}
+        {label: "Add +X/+X Counter", action: "addCounter"},
+        {label: "Add Counter", action: "addGenericCounter"}
     ];
 
     const menuOptions = options || defaultOptions;

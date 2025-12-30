@@ -29,18 +29,21 @@
       "deckLoader.js",
       "stateManager.js",
       "pathHandler.js",
+      "build/icon256.png",
       {
         "from": "../client/dist",
         "to": "client/dist",
         "filter": ["**/*"]
       }
     ],
+    "win": {
+      "target": "nsis",
+      "icon": "build/icon256.png"
+    },
     "linux": {
       "target": "AppImage",
-      "category": "Game"
-    },
-    "win": {
-      "target": "nsis"
+      "icon": "build/icon256.png",
+      "category": "Utility"
     }
   }
 }

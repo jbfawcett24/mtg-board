@@ -4,11 +4,11 @@ import ContextMenu from "./contextMenu.jsx"
 import ZoneViewer from "./ZoneViewer.jsx";
 import DeckSelect from "./DeckSelect.jsx";
 import {motion, AnimatePresence} from "framer-motion";
-import CounterSelector from "./CounterSelector.jsx";
+import CounterSelector, {GenericCounter} from "./CounterSelector.jsx";
 import ResetGame from "./ResetGame.jsx";
 import Popup from "./ResetGame.jsx";
 
-export default function Board({ gameState, socket}) {
+export default function Board({ gameState, socket, setRole}) {
     const [menuState, setMenuState] = useState(null)
     const [viewingZone, setViewingZone] = useState(null)
     const [deckSelect, setDeckSelect] = useState(null)
@@ -16,6 +16,8 @@ export default function Board({ gameState, socket}) {
     const [ reset, setReset ] = useState(false);
     const [position, setPosition] = useState(null);
     const [topCardShow, setTopCardShow] = useState(false);
+    const [addGenericCounter, setAddGenericCounter] = useState(null);
+    const [zoomedCard, setZoomCard] = useState(null);
 
     const bgImage = gameState.theme?.background || "/background.jpg"
     const cardBackImg = gameState.theme?.cardBack || "/card-back.jpg"
@@ -77,6 +79,16 @@ export default function Board({ gameState, socket}) {
                 performMove(cardId, action);
                 return;
                 }
+            case "backToMenu":
+                setRole("");
+                break;
+            case "zoomCard":
+            {
+                const { cardId } = menuState;
+                const url = findCardById(cardId).imageUrl;
+                setZoomCard(url);
+                break;
+            }
             default: {
                 const { cardId } = menuState;
                 performMove(cardId, action);
@@ -113,6 +125,9 @@ export default function Board({ gameState, socket}) {
             case "addCounter":
                 setAddCounter(cardId);
                 break;
+            case "addGenericCounter":
+                setAddGenericCounter(cardId);
+                break;
             case "moveTo":
                 console.log("moving");
                 setMenuState(prev => {
@@ -147,6 +162,12 @@ export default function Board({ gameState, socket}) {
         console.log(`Adding Counter: ${power}/${toughness} to ${addCounter}`);
         socket.emit('add_counter', {id: addCounter, changes: {power: power, toughness: toughness}});
         setAddCounter(null);
+    }
+
+    const handleAddGenericCounter = (num) => {
+        console.log(`Adding Generic Counter: ${num}`);
+        socket.emit('add_generic', {id: addGenericCounter, num});
+        setAddGenericCounter(null);
     }
 
     useEffect(() => {
@@ -300,6 +321,7 @@ export default function Board({ gameState, socket}) {
                         {label: topCardShow ? "Hide Top Card" : "Show Top Card", action: "showTopCard"},
                         {label: "Shuffle", action: "shuffle"},
                         {label: "Reset Game", action: "reset"},
+                        {label: "Back to Menu", action: "backToMenu"}
                     ] : menuState.options || undefined}
                     gameState={gameState}
                     cardId={menuState.cardId}
@@ -316,9 +338,9 @@ export default function Board({ gameState, socket}) {
             )}
             {deckSelect && (
                 <DeckSelect
-                    socket={socket}
                     deckList={deckSelect}
                     onClose={() => {setDeckSelect(null)}}
+                    onDeckSelect={(deckName) => {socket.emit('deck_selected', {deckName});}}
                 />
             )}
             <AnimatePresence>
@@ -330,12 +352,20 @@ export default function Board({ gameState, socket}) {
             )}
             </AnimatePresence>
             <AnimatePresence>
+                {addGenericCounter && (
+                    <GenericCounter
+                        onClose={() => {setAddGenericCounter(null)}}
+                        onSubmit={handleAddGenericCounter}
+                    />
+                )}
+            </AnimatePresence>
+            <AnimatePresence>
             {reset && (
                 <Popup
                     onClose={() => {setReset(false)}}
                     content={
                     <>
-                        <h2>Reset Game?</h2>
+                        <h2 style={{color: "white"}}>Reset Game?</h2>
                         <div
                         style={{
                         display: "flex",
@@ -397,7 +427,39 @@ export default function Board({ gameState, socket}) {
                 />
             )}
             </AnimatePresence>
+            <AnimatePresence>
+                {zoomedCard && (
+                    <ZoomedCard url={zoomedCard} onClose={() => {setZoomCard(null)}}/>
+                )}
+            </AnimatePresence>
         </div>
+    )
+}
+
+function ZoomedCard({url, onClose}) {
+    return (
+        <motion.div
+            initial={{opacity: 0}}
+            animate={{opacity: 1}}
+            exit={{opacity: 0}}
+            style={{
+                position: "fixed",
+                top: 0,
+                left: 0,
+                width: "100%",
+                height: "100%",
+                zIndex: 4999,
+                backgroundColor: "rgba(0,0,0,0.4)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+            }}
+            onClick={onClose}
+        >
+            <img src={url} alt="Zoomed card" style={{
+                borderRadius: "25px",
+            }}/>
+        </motion.div>
     )
 }
 
@@ -421,7 +483,8 @@ function PositionSelect({ onSubmit, libPosition, setPosition }) {
     const buttonStyle = {
         width: '40px',
         height: '40px',
-        padding: "0"
+        padding: "0",
+        backgroundColor: "#333"
     }
 
     const updateVal = (diff) => {
@@ -433,7 +496,7 @@ function PositionSelect({ onSubmit, libPosition, setPosition }) {
 
     return (
         <>
-            <h2 style={{padding: 0, margin: "2%"}}>Select Position</h2>
+            <h2 style={{padding: 0, margin: "2%", color: "white"}}>Select Position</h2>
             <div
                 style={{
                     display: 'flex',
@@ -457,7 +520,7 @@ function PositionSelect({ onSubmit, libPosition, setPosition }) {
             <motion.button
                 onClick={() => onSubmit(position)}
                 whileTap={{scale: 0.9, backgroundColor: "#222", color: "white"}}
-                style={{marginBottom: "2.5%", width: "95%"}}
+                style={{marginBottom: "2.5%", width: "95%", backgroundColor: "#333"}}
             >Move to Library</motion.button>
         </>
     )
