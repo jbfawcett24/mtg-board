@@ -53,6 +53,7 @@ The application reads decks from your computer's `Documents` folder.
     * Export your deck from Moxfield in the default export format and save it as `deck.txt`.
     * Export your tokens (if any) in the Moxfield format and save it as `tokens.txt`.
 5.  **Place Files**: Put both text files into the deck folder you created in Step 3.
+6.  **(Optional)**: You can add custom backgrounds and card back arts for each deck, by placing a file called `background` and `card-back` in png, jpg, or jpeg
 
 ## Running the Application
 
