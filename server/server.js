@@ -6,6 +6,7 @@ const path = require("path");
 const {getDeckList} = require("./deckLoader");
 const {setGameState, getLocalIp} = require("./stateManager");
 const { exec } = require("child_process");
+const { getDeckFromURL } = require("./getDeck");
 
 async function createServer(staticPath, deckPath) {
     const app = express();
@@ -274,6 +275,22 @@ async function createServer(staticPath, deckPath) {
                     console.error("Could not open folder:", error);
                 }
             });
+        })
+
+        socket.on('create_new_deck', async (url) => {
+            try {
+                console.log(`Attempting to import deck from: ${url}`);
+                await getDeckFromURL(url, deckPath);
+
+                // Success! Now auto-refresh the decks
+                const decks = await getDeckList(deckPath);
+                io.emit("decks_loaded", { decks, ip: getLocalIp() });
+
+            } catch (err) {
+                console.error("Import failed:", err);
+                // Send specific error message back to the client who requested it
+                socket.emit("import_error", err.message || "Failed to import deck");
+            }
         })
 
         socket.on('disconnect', () => {

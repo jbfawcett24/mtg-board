@@ -51,7 +51,9 @@ The application reads decks from your computer's `Documents` folder.
 3.  **Create a Deck Folder**: Inside `Decks/`, create a new folder named after your deck (e.g., `Documents/MTG-Board/Decks/MyCommanderDeck/`).
 4.  **Prepare Files (Moxfield Format)**:
     * Export your deck from Moxfield in the default export format and save it as `deck.txt`.
+      * This format is  ```number name (set) collector number```
     * Export your tokens (if any) in the Moxfield format and save it as `tokens.txt`.
+      * This format should be ```name [set]```
 5.  **Place Files**: Put both text files into the deck folder you created in Step 3.
 6.  **(Optional)**: You can add custom backgrounds and card back arts for each deck, by placing a file called `background` and `card-back` in png, jpg, or jpeg
 

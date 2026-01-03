@@ -4,6 +4,7 @@ import QRCode from "react-qr-code";
 import Board from "./board.jsx";
 import Hand from "./hand.jsx";
 import DeckSelect from "./DeckSelect.jsx";
+import Popup from "./ResetGame.jsx";
 
 const socket = io.connect({
     auth: {
@@ -19,6 +20,7 @@ export default function App() {
 
     const [showDeckSelector, setShowDeckSelector] = useState(false);
     const [selectedDeck, setSelectedDeck] = useState(null);
+    const [importDeck, setImportDeck] = useState(null);
 
     const [role, setRole] = useState(() => {
         const params = new URLSearchParams(window.location.search);
@@ -41,12 +43,17 @@ export default function App() {
             setAppStatus("NO_DECKS");
         });
 
+        socket.on("import_error", (message) => {
+            alert(`Error importing deck: ${message}`);
+        });
+
         socket.emit("refresh_decks");
 
         return () => {
             socket.off("update_state");
             socket.off("decks_loaded");
             socket.off("no_decks");
+            socket.off("import_error")
         };
     }, []);
 
@@ -94,11 +101,17 @@ export default function App() {
                     </p>
 
                     <div style={styles.buttonGroup}>
+                        {/*<button*/}
+                        {/*    style={styles.secondaryButton}*/}
+                        {/*    onClick={() => socket.emit("open_folder")}*/}
+                        {/*>*/}
+                        {/*    Open Folder*/}
+                        {/*</button>*/}
                         <button
                             style={styles.secondaryButton}
-                            onClick={() => socket.emit("open_folder")}
-                        >
-                            Open Folder
+                            onClick={() => {setImportDeck({show: true, url: ""})}}
+                            >
+                            Import Deck
                         </button>
                         <button
                             style={styles.primaryButton}
@@ -111,6 +124,13 @@ export default function App() {
                         <button style={styles.dangerButton} onClick={handleCloseApp}>Close App</button>
                     </div>
                 </div>
+                {importDeck && (
+                    <ImportDeckForm
+                        importDeck={importDeck}
+                        setImportDeck={setImportDeck}
+                        onSubmit={() => {socket.emit("create_new_deck", importDeck.url); setImportDeck(null);}}
+                    />
+                )}
             </div>
         );
     }
@@ -128,12 +148,20 @@ export default function App() {
                         {!selectedDeck ? (
                             <>
                                 <h2 style={{color: 'white', marginBottom: '20px'}}>Setup Session</h2>
-                                <button
-                                    style={styles.primaryButton}
-                                    onClick={() => setShowDeckSelector(true)}
-                                >
-                                    Select Deck
-                                </button>
+                                <div style={{display: 'flex', flexDirection: 'column', gap: '10px', width: '100%'}}>
+                                    <button
+                                        style={styles.primaryButton}
+                                        onClick={() => setShowDeckSelector(true)}
+                                    >
+                                        Select Deck
+                                    </button>
+                                    <button
+                                        style={styles.secondaryButton}
+                                        onClick={() => setImportDeck({show: true, url: ""})}
+                                    >
+                                        Import Deck
+                                    </button>
+                                </div>
                             </>
                         ) : (
                             <div style={{display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%'}}>
@@ -151,12 +179,20 @@ export default function App() {
                                         Swap
                                     </button>
                                     <button
-                                        style={{...styles.startButton, flex: 1}}
-                                        onClick={startGame}
+                                        style={{...styles.secondaryButton, flex: 1}}
+                                        onClick={() => setImportDeck({show: true, url: ""})}
                                     >
-                                        Start Game
+                                        Import New Deck
                                     </button>
                                 </div>
+                                {/* Added Import Button below the main actions */}
+                                <button
+                                    style={{...styles.startButton, flex: 1}}
+                                    onClick={startGame}
+                                >
+                                    Start Game
+                                </button>
+
                             </div>
                         )}
                     </div>
@@ -184,6 +220,13 @@ export default function App() {
                     deckList={deckList}
                     onDeckSelect={handleDeckChosen}
                     onClose={() => setShowDeckSelector(false)}
+                />
+            )}
+            {importDeck && (
+                <ImportDeckForm
+                    importDeck={importDeck}
+                    setImportDeck={setImportDeck}
+                    onSubmit={() => {socket.emit("create_new_deck", importDeck.url); setImportDeck(null);}}
                 />
             )}
         </div>
@@ -243,7 +286,8 @@ const styles = {
     buttonGroup: {
         display: "flex",
         gap: "10px",
-        marginTop: "10px"
+        marginTop: "10px",
+        alignItems: "center"
     },
     primaryButton: {
         backgroundColor: "#3498db",
@@ -264,7 +308,9 @@ const styles = {
         borderRadius: "8px",
         cursor: "pointer",
         fontWeight: "600",
-        fontSize: "1rem"
+        fontSize: "1rem",
+        width: "100%",
+        marginTop: "10px"
     },
     secondaryButton: {
         backgroundColor: "transparent",
@@ -274,7 +320,7 @@ const styles = {
         borderRadius: "8px",
         cursor: "pointer",
         fontWeight: "600",
-        fontSize: "1rem"
+        fontSize: "1rem",
     },
     dangerButton: {
         backgroundColor: "transparent",
@@ -296,3 +342,59 @@ const styles = {
         marginBottom: "15px"
     },
 };
+
+// Replace your existing ImportDeckForm function with this one:
+
+function ImportDeckForm({ importDeck, setImportDeck, onSubmit }) {
+    return (
+        <Popup
+            content={
+                <form
+                    onSubmit={(e) => { e.preventDefault(); onSubmit(importDeck.url); }}
+                    style={{display: 'flex', flexDirection: 'column', gap: '15px', width: '100%', padding: "5%"}}
+                >
+                    <input
+                        type="text"
+                        value={importDeck.url}
+                        onChange={(e) => {setImportDeck({...importDeck, url: e.target.value})}}
+                        placeholder="Paste Deck URL (Moxfield or Archidekt)"
+                        style={{
+                            margin: "10px",
+                            padding: '12px',
+                            borderRadius: '8px',
+                            border: '1px solid #4b5563',
+                            backgroundColor: '#374151',
+                            color: '#e5e7eb',
+                            fontSize: '1rem',
+                            outline: 'none'
+                        }}
+                    />
+                    <div style={{display: 'flex', gap: '10px', margin: "10px"}}>
+                        <button
+                            type="button"
+                            onClick={() => setImportDeck(null)}
+                            style={{
+                                ...styles.secondaryButton,
+                                flex: 1,
+                                justifyContent: 'center'
+                            }}
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            type="submit"
+                            style={{
+                                ...styles.primaryButton,
+                                flex: 1,
+                                justifyContent: 'center'
+                            }}
+                        >
+                            Import
+                        </button>
+                    </div>
+                </form>
+            }
+            onClose={() => setImportDeck(null)}
+        />
+    )
+}
