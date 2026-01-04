@@ -30,6 +30,9 @@
       "stateManager.js",
       "pathHandler.js",
       "build/icon256.png",
+      "getDeck.js",
+      "archidecktRequest.js",
+      "moxfieldRequest.js",
       {
         "from": "../client/dist",
         "to": "client/dist",

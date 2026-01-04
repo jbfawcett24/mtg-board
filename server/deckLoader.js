@@ -202,6 +202,7 @@ async function loadTokens(deckName, folderPath) {
     const lines = fileContent.split('\n').filter((line) => line.trim() !== '');
 
     const identifiers = [];
+    const nameOverrides = [["The Ring // The Ring Tempts You", "The Ring"]]
 
     // 2. Parse each line to extract Name and Set
     lines.forEach(line => {
@@ -214,19 +215,19 @@ async function loadTokens(deckName, folderPath) {
         const match = line.match(/^(.+)\s+\[(\w+)\]$/);
 
         if (match) {
-            const name = match[1].trim();
+            let name = match[1].trim();
             const setCode = match[2].trim();
+
+            if(nameOverrides.some(override => override[0] === name)) {
+                name = nameOverrides.find(override => override[0] === name)[1];
+            }
 
             identifiers.push({
                 name: name,
-                set: setCode // Telling Scryfall exactly which art to grab
+                set: setCode
             });
         }
     });
-
-    // 3. Send Batch Request to Scryfall
-    // Note: Scryfall limits this endpoint to 75 cards per request.
-    // If you have more than 75 tokens, you'd need to loop this part.
     if (identifiers.length === 0) return [];
 
     try {
