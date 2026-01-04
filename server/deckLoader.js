@@ -18,7 +18,7 @@ async function getDeckList(deckPath) {
     const commanders = [];
 
     decks.forEach(deck => {
-        commanders.push(fs.readFileSync(deckPath + '/' + deck + '/deck.txt', 'utf8').split('\n')[0]);
+        commanders.push(fs.readFileSync(deckPath + '/' + deck + '/commanders.txt', 'utf8').split('\n')[0]);
     })
 
     const identifiers = commanders.map(commander => {
@@ -67,7 +67,32 @@ async function loadDeck(deckName, folderPath) {
     const fileContent = fs.readFileSync(filePath, 'utf-8');
     const lines = fileContent.split('\n').filter((line) => line.trim() !== '');
 
+    const commanderFile = path.join(folderPath, 'commanders.txt')
+    const commandContent = fs.readFileSync(commanderFile, 'utf8');
+    const commandLines = commandContent.split('\n').filter((line) => line.trim() !== '');
+
     const identifiers = [];
+
+    commandLines.forEach(line => {
+        const match = line.match(/^(\d+)\s+(.+?)\s+\(([A-Za-z0-9]+)\)\s+(\S+)/);
+
+        if (match) {
+            const count = parseInt(match[1]);
+            const name = match[2];
+            const set = match[3];
+            const number = match[4];
+
+            for(let i = 0; i < count; i++) {
+                identifiers.push({
+                    set: set.toLowerCase(),
+                    collector_number: number,
+                    isCommander: true
+                });
+            }
+        } else {
+            console.warn(`Skipping unreadable line ${line}`);
+        }
+    })
 
     lines.forEach(line => {
         const match = line.match(/^(\d+)\s+(.+?)\s+\(([A-Za-z0-9]+)\)\s+(\S+)/);
@@ -82,7 +107,7 @@ async function loadDeck(deckName, folderPath) {
                 identifiers.push({
                     set: set.toLowerCase(),
                     collector_number: number,
-                    isCommander: (identifiers.length === 0),
+                    isCommander: false
                 });
             }
         } else {
@@ -215,12 +240,11 @@ async function loadTokens(deckName, folderPath) {
         const match = line.match(/^(.+)\s+\[(\w+)\]$/);
 
         if (match) {
-            let name = match[1].trim();
-            const setCode = match[2].trim();
+            const rawName = match[1].trim();
+            const override = nameOverrides.find(o => o[0] === rawName);
 
-            if(nameOverrides.some(override => override[0] === name)) {
-                name = nameOverrides.find(override => override[0] === name)[1];
-            }
+            const name = override ? override[1] : rawName;
+            const setCode = match[2].trim();
 
             identifiers.push({
                 name: name,

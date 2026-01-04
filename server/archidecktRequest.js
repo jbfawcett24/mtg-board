@@ -1,13 +1,11 @@
 async function parseArchDeckInfo(deck) {
-    let deckString = "";
-
-    deckString += deck.cards.map(card => {
+    const commandString = deck.cards.map(card => {
         if (card.categories.includes("Commander")) {
             return `${card.quantity} ${card.card.oracleCard.name} (${card.card.edition.editioncode}) ${card.card.collectorNumber}\n`
         }
     }).join("");
 
-    deckString += deck.cards.map(card => {
+    const deckString = deck.cards.map(card => {
         if (!card.categories.includes("Commander")) {
             return `${card.quantity} ${card.card.oracleCard.name} (${card.card.edition.editioncode}) ${card.card.collectorNumber}\n`
         }
@@ -50,7 +48,8 @@ async function parseArchDeckInfo(deck) {
         return {
             name: deck.name,
             deck: deckString,
-            tokens: tokenString
+            tokens: tokenString,
+            commanders: commandString
         }
 
     } catch (error) {

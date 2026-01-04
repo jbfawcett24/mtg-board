@@ -26,13 +26,16 @@ async function getDeckFromURL(inputUrl, filePath) {
             break;
     }
 
-    const {name, deck, tokens} = await getDeck(url, type);
+    const {name, deck, tokens, commanders} = await getDeck(url, type);
 
     if (!fs.existsSync(`${filePath}/${name}`)) {
         fs.mkdirSync(`${filePath}/${name}`);
     }
 
     try {
+        fs.writeFileSync(`${filePath}/${name}/commanders.txt`, commanders);
+        console.log("Commanders written");
+
         fs.writeFileSync(`${filePath}/${name}/deck.txt`, deck);
         console.log("Deck written!");
 

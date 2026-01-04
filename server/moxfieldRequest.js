@@ -33,11 +33,10 @@ const getDeck = async (url, type) => {
 }
 
 const parseMoxDeckInfo = (deck) => {
-    let deckString = "";
-    deckString += Object.values(deck.commanders).map(card => {
+    const commandString = Object.values(deck.commanders).map(card => {
         return `${card.quantity} ${card.card.name} (${card.card.set}) ${card.card.cn}\n`
     }).join("");
-    deckString += Object.values(deck.mainboard).map(card => {
+    const deckString = Object.values(deck.mainboard).map(card => {
         if(card.printingData) {
             return card.printingData.map((item) => {
                 return `${item.quantity} ${card.card.name} (${item.set}) ${item.cn}\n`
@@ -61,7 +60,8 @@ const parseMoxDeckInfo = (deck) => {
     return {
         name: deck.name,
         deck: deckString,
-        tokens: tokenString
+        tokens: tokenString,
+        commanders: commandString
     };
 }
 
