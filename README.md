@@ -6,7 +6,7 @@
 
 * **Dual-Screen Gameplay**: Use your laptop as the shared board and your phone as your private hand.
 * **Easy Connection**: Connect your phone by simply scanning a QR code displayed on the board.
-* **Deck Import**: Support for importing decks and tokens directly from Moxfield exports.
+* **Deck Import**: Support for importing decks and tokens directly from Moxfield and Archidekt
 * **Auto-Setup**: Automatically manages the deck folder structure for you.
 * **Cross-Platform**: Compatible with Windows and Linux.
 
@@ -20,7 +20,7 @@ If you are running the code from source (instead of using a pre-built release), 
 
 * [Node.js](https://nodejs.org/) (Latest LTS recommended)
 * npm (comes with Node.js)
-
+https://moxfield.com/decks/89zcnZK_A0mGi3Nfw7KFrg
 ## Setup & Installation (From Source)
 
 1.  **Clone the repository:**
@@ -47,15 +47,8 @@ If you are running the code from source (instead of using a pre-built release), 
 The application reads decks from your computer's `Documents` folder. 
 
 1.  **Launch the App**: When you first run the app, it will automatically create the required folder structure: `Documents/MTG-Board/Decks/`.
-2.  **Open Deck Folder**: You can click the "Open Folder" button inside the app to go directly to this directory.
-3.  **Create a Deck Folder**: Inside `Decks/`, create a new folder named after your deck (e.g., `Documents/MTG-Board/Decks/MyCommanderDeck/`).
-4.  **Prepare Files (Moxfield Format)**:
-    * Export your deck from Moxfield in the default export format and save it as `deck.txt`.
-      * This format is  ```number name (set) collector number```
-    * Export your tokens (if any) in the Moxfield format and save it as `tokens.txt`.
-      * This format should be ```name [set]```
-5.  **Place Files**: Put both text files into the deck folder you created in Step 3.
-6.  **(Optional)**: You can add custom backgrounds and card back arts for each deck, by placing a file called `background` and `card-back` in png, jpg, or jpeg
+2. **Import Decks**: In the app, press the import deck button. Paste the url to the public/ unlisted deck from Moxfield or Archidekt.
+3. **Select Deck**: Once the deck is imported, press the select deck button, select your deck, and press start game.
 
 ## Running the Application
 
@@ -76,7 +69,7 @@ To run the application in development mode:
 ### Connecting Your Phone
 Once the application launches on your computer:
 * **QR Code**: A QR code will appear on the screen. Scan it with your phone to connect instantly.
-* **Manual Connection**: Alternatively, you can connect manually by navigating to your computer's IP address on port **3001** (e.g., `http://192.168.1.5:3001`).
+* **Manual Connection**: Alternatively, you can connect manually by navigating to your computer's IP address on port **3001** (e.g., `http://192.168.1.5:3001?role=hand`).
 
 ## Building for Distribution
 
