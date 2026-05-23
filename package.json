@@ -1,0 +1,10 @@
+{
+  "name": "mtg-board",
+  "private": true,
+  "workspaces": [
+    "shared",
+    "client",
+    "hand",
+    "backend"
+  ]
+}

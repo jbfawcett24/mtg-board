@@ -1,0 +1,15 @@
+{
+  "$schema": "https://schema.tauri.app/security/2",
+  "identifier": "default",
+  "description": "Default capability for MTG Board client",
+  "windows": ["main"],
+  "permissions": [
+    "core:default",
+    "shell:allow-open",
+    "sql:allow-execute",
+    "sql:allow-select",
+    "sql:allow-load",
+    "dialog:allow-open",
+    "fs:allow-read-file"
+  ]
+}

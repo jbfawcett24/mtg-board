@@ -1,0 +1,110 @@
+.hand-layout {
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+.hand-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 20px;
+  background: #16213e;
+  border-bottom: 1px solid #0f3460;
+}
+
+.hand-title {
+  font-size: 1.1rem;
+  font-weight: bold;
+  color: #e94560;
+}
+
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #555;
+}
+
+.dot.connected { background: #4caf50; }
+.dot.disconnected { background: #f44336; }
+
+.hand-main {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.join-screen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  max-width: 320px;
+}
+
+.join-screen h2 {
+  font-size: 1.4rem;
+  color: #ccc;
+}
+
+.code-input {
+  width: 100%;
+  text-align: center;
+  font-size: 2rem;
+  letter-spacing: 0.3em;
+  padding: 12px;
+  background: #16213e;
+  border: 2px solid #0f3460;
+  color: #eee;
+  border-radius: 8px;
+  font-family: monospace;
+  text-transform: uppercase;
+}
+
+.code-input:focus {
+  outline: none;
+  border-color: #e94560;
+}
+
+.join-screen button {
+  width: 100%;
+  padding: 14px;
+  font-size: 1.1rem;
+  background: #e94560;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.join-screen button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.error {
+  color: #f44336;
+  font-size: 0.9rem;
+}
+
+.hand-screen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+}
+
+.game-label {
+  color: #aaa;
+  font-size: 0.9rem;
+}
+
+.placeholder-text {
+  color: #555;
+  font-size: 1rem;
+}
