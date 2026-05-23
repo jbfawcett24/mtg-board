@@ -8,6 +8,7 @@ export default function App() {
   const [codeInput, setCodeInput] = useState('');
   const [gameCode, setGameCode] = useState(null);
   const [error, setError] = useState(null);
+  const [initialState, setInitialState] = useState(null);
 
   useEffect(() => {
     socket.connect();
@@ -16,13 +17,18 @@ export default function App() {
     socket.on('disconnect', () => {
       setStatus('disconnected');
       setGameCode(null);
+      setInitialState(null);
     });
     socket.on('game_joined', ({ code }) => {
       setGameCode(code);
       setError(null);
     });
+    socket.on('game_state_update', (state) => {
+      setInitialState(state);
+    });
     socket.on('game_ended', () => {
       setGameCode(null);
+      setInitialState(null);
       setError('The game ended.');
     });
     socket.on('error', ({ message }) => setError(message));
@@ -38,7 +44,7 @@ export default function App() {
   }
 
   if (gameCode) {
-    return <GameHand />;
+    return <GameHand initialState={initialState} />;
   }
 
   return (

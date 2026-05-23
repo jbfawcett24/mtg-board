@@ -159,7 +159,9 @@ function HandCard({ card, index, isSelected, onSelect, onPlay, playLabel }) {
                         overflow: 'hidden',
                         position: 'relative',
                     }}
-                    animate={{ scale: isSelected ? 1.03 : 1 }}
+                    initial={{ opacity: 0, scale: 0.9, y: 120}}
+                    animate={{ opacity: 1, scale: isSelected ? 1.03 : 1, y: 0}}
+                    exit={{ opacity: 0, scale: 0.9, y: -120 }}
                     transition={{ type: 'spring', bounce: 0.3, duration: 0.2 }}
                     onPointerDown={startPress}
                     onPointerUp={endPress}
@@ -258,22 +260,37 @@ function HandCard({ card, index, isSelected, onSelect, onPlay, playLabel }) {
 // ---- CardScroller ----
 
 function CardScroller({ items, selectedId, onSelect, onPlay, playLabel, emptyText }) {
+    const trackRef = useRef(null);
+    const prevLengthRef = useRef(items.length);
+
+    useEffect(() => {
+        if (items.length > prevLengthRef.current && trackRef.current) {
+            const el = trackRef.current;
+            requestAnimationFrame(() => {
+                el.scrollTo({ left: el.scrollWidth, behavior: 'smooth' });
+            });
+        }
+        prevLengthRef.current = items.length;
+    }, [items.length]);
+
     return (
-        <div css={scrollTrackStyle}>
+        <div ref={trackRef} css={scrollTrackStyle}>
             {items.length === 0 ? (
                 <p css={emptyStyle}>{emptyText}</p>
             ) : (
-                items.map((card, i) => (
-                    <HandCard
-                        key={card.instanceId ?? card.id}
-                        card={card}
-                        index={i}
-                        isSelected={(card.instanceId ?? card.id) === selectedId}
-                        onSelect={onSelect}
-                        onPlay={onPlay}
-                        playLabel={playLabel}
-                    />
-                ))
+                <AnimatePresence>
+                    {items.map((card, i) => (
+                        <HandCard
+                            key={card.instanceId ?? card.id}
+                            card={card}
+                            index={i}
+                            isSelected={(card.instanceId ?? card.id) === selectedId}
+                            onSelect={onSelect}
+                            onPlay={onPlay}
+                            playLabel={playLabel}
+                        />
+                    ))}
+                </AnimatePresence>
             )}
         </div>
     );
@@ -283,8 +300,8 @@ function CardScroller({ items, selectedId, onSelect, onPlay, playLabel, emptyTex
 
 const TABS = ['Hand', 'Tokens', 'Command'];
 
-export default function GameHand() {
-    const [gameState, setGameState] = useState(null);
+export default function GameHand({ initialState = null }) {
+    const [gameState, setGameState] = useState(initialState);
     const [tab, setTab] = useState('Hand');
     const [selectedId, setSelectedId] = useState(null);
 
@@ -344,6 +361,7 @@ export default function GameHand() {
                 onPlay={handlePlay}
                 playLabel={playLabel}
                 emptyText={`No cards in ${tab.toLowerCase()}`}
+
             />
 
             {tab === 'Hand' && (

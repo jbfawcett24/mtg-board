@@ -77,6 +77,7 @@ io.on('connection', (socket) => {
 
     socket.emit('game_joined', { code });
     io.to(code).emit('player_joined', { role: 'hand' });
+    if (session.gameState) socket.emit('game_state_update', session.gameState);
     console.log(`Hand joined game: ${code}`);
   });
 
@@ -247,12 +248,19 @@ io.on('connection', (socket) => {
   })
 
   socket.on('shuffle_library', () => {
-    const { session } = useSession(socket, { needsGameState: true });
-
-    if (session.gameState?.library) {
-      session.gameState.library.sort(() => Math.random() - 0.5);
-    }
+    const session = getSession(socket);
+    if (!session) return;
+    console.log("Shuffling library for game: ", socket.data.code);
+    session.gameState.library.sort(() => Math.random() - 0.5);
+    syncGameState(session, socket.data.code);
   })
+
+  socket.on('untap_all', () => {
+    const session = getSession(socket);
+    if (!session) return;
+    session.gameState.battlefield.forEach(c => c.tapped = false);
+    syncGameState(session, socket.data.code);
+  });
 
   socket.on('disconnect', () => {
     const { code, role } = socket.data;
@@ -282,7 +290,7 @@ function syncGameState(session, code) {
   io.to(code).emit('game_state_update', session.gameState);
 }
 
-function useSession(socket, { needsGameState = false, role = null }) {
+function getSession(socket, { needsGameState = true, role = null } = {}) {
   const { code, role: socketRole } = socket.data;
   if (!code) return null;
   if (role && socketRole !== role) return null;

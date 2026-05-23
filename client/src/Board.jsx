@@ -88,13 +88,11 @@ const battlefieldStyle = css`
     overflow: hidden;
 `;
 
-const cardImgStyle = (tapped) => css`
+const cardImgStyle = css`
     width: ${CARD_W}px;
     height: auto;
     border-radius: 12px;
     display: block;
-    transform: rotate(${tapped ? 90 : 0}deg);
-    transition: transform 0.2s ease;
     box-shadow: 0 4px 16px rgba(0,0,0,0.6);
     pointer-events: none;
 `;
@@ -177,7 +175,7 @@ function BattlefieldCard({ card, onTap, onContextMenu }) {
             }
         }
         if (dragRef.current.moved) {
-            setPos({ x: dx, y: dy });
+            setPos({ x:dx, y: dy });
         }
     }
 
@@ -190,6 +188,8 @@ function BattlefieldCard({ card, onTap, onContextMenu }) {
             onTap(card);
         }
         dragRef.current = null;
+        const GRID = 20;
+        setPos(prev => ({ x: Math.round(prev.x / GRID) * GRID, y: Math.round(prev.y / GRID) * GRID }));
     }
 
     function onPointerCancel() {
@@ -200,7 +200,8 @@ function BattlefieldCard({ card, onTap, onContextMenu }) {
     return (
         <motion.div
             initial={{ opacity: 0, scale: 0.7 }}
-            animate={{ opacity: 1, scale: 1 }}
+            animate={{ opacity: 1, scale: 1, rotate: card.tapped ? 90 : 0 }}
+            exit={{ opacity: 0, scale: 0.7 }}
             transition={{ type: 'spring', bounce: 0.3, duration: 0.3 }}
             style={{
                 position: 'absolute',
@@ -220,7 +221,7 @@ function BattlefieldCard({ card, onTap, onContextMenu }) {
             <img
                 src={card.image_uri}
                 alt={card.name}
-                css={cardImgStyle(card.tapped)}
+                css={cardImgStyle}
                 draggable={false}
             />
         </motion.div>
@@ -434,7 +435,7 @@ function ZoneViewer({ zoneName, cards, onMove, onClose }) {
 
 // ---- BoardMenu ----
 
-function BoardMenu({ x, y, onClose, setPage, revealedState, setRevealedState }) {
+function BoardMenu({ x, y, onClose, setPage, revealedState, setRevealedState, socket }) {
     const menuRef = useRef(null);
 
     useEffect(() => {
@@ -605,6 +606,7 @@ export default function Board({ socket, setPage }) {
                         setPage={setPage}
                         revealedState={revealedState}
                         setRevealedState={setRevealedState}
+                        socket={socket}
                     />
                 )}
             </AnimatePresence>
