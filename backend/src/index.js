@@ -81,7 +81,7 @@ io.on('connection', (socket) => {
     console.log(`Hand joined game: ${code}`);
   });
 
-  socket.on('start_game', (deck) => {
+  socket.on('start_game', ({ cards, tokens }) => {
     const { code } = socket.data;
     if (!code) return;
 
@@ -89,21 +89,21 @@ io.on('connection', (socket) => {
     if (!session || session.boardSocketId !== socket.id) return;
 
     session.gameState = {
-      library: deck.cards.filter(c => c.board === "main")
-        .flatMap(c => Array.from({ length: c.quantity }, (_, i) => ({ 
-          ...c, 
+      library: cards.filter(c => c.board === "main")
+        .flatMap(c => Array.from({ length: c.quantity }, (_, i) => ({
+          ...c,
           instanceId: `${c.id}-${c.scryfall_id}-${i}`,
           tapped: false,
           position: { x: 0, y: 0 },
           counters: []
         })))
         .sort(() => Math.random() - 0.5),
-      commandZone: deck.cards.filter(c => c.board === "commander"),
+      commandZone: cards.filter(c => c.board === "commander"),
       hand: [],
       battlefield: [],
       graveyard: [],
       exile: [],
-      tokens: deck.tokens
+      tokens
     }
 
     for(let i = 0; i < 7; i++) {
@@ -237,13 +237,36 @@ io.on('connection', (socket) => {
     syncGameState(session, code);
   });
 
-  socket.on('reset_game', () => { 
+  socket.on('reset_game', () => {
     const { code } = socket.data;
     if (!code) return;
     const session = sessions.get(code);
     if (!session || session.boardSocketId !== socket.id) return;
+    if (!session.gameState) return;
 
-    session.gameState = null;
+    const gs = session.gameState;
+    const allCards = [
+      ...gs.library,
+      ...gs.hand,
+      ...gs.graveyard,
+      ...gs.exile,
+      ...gs.battlefield.filter(c => !c.isToken && !c.isCommander),
+    ].map(c => ({ ...c, tapped: false, counters: [], position: { x: 0, y: 0 } }));
+
+    const commanders = [
+      ...gs.commandZone,
+      ...gs.battlefield.filter(c => c.isCommander),
+    ].map(c => ({ ...c, tapped: false, counters: [] }));
+
+    gs.library = allCards.sort(() => Math.random() - 0.5);
+    gs.hand = [];
+    gs.graveyard = [];
+    gs.exile = [];
+    gs.battlefield = [];
+    gs.commandZone = commanders;
+
+    for (let i = 0; i < 7; i++) drawCard(session);
+
     syncGameState(session, code);
   })
 
@@ -251,6 +274,17 @@ io.on('connection', (socket) => {
     const session = getSession(socket);
     if (!session) return;
     console.log("Shuffling library for game: ", socket.data.code);
+    session.gameState.library.sort(() => Math.random() - 0.5);
+    syncGameState(session, socket.data.code);
+  })
+
+  socket.on('shuffle_zone_into_library', ({ zone }) => {
+    const session = getSession(socket);
+    if (!session) return;
+    if (zone !== 'graveyard' && zone !== 'exile') return;
+    const cards = session.gameState[zone].map(c => ({ ...c, tapped: false, counters: [] }));
+    session.gameState[zone] = [];
+    session.gameState.library.push(...cards);
     session.gameState.library.sort(() => Math.random() - 0.5);
     syncGameState(session, socket.data.code);
   })

@@ -143,7 +143,7 @@ const menuItemDangerStyle = css`
 
 // ---- BattlefieldCard ----
 
-function BattlefieldCard({ card, onTap, onContextMenu, getDropZone, onMove, battlefieldRef }) {
+function BattlefieldCard({ card, onTap, onContextMenu, getDropZone, onMove, battlefieldRef, zIndex, onFocus }) {
     const timerRef = useRef(null);
     const didLongPress = useRef(false);
     const dragRef = useRef(null);
@@ -171,6 +171,7 @@ function BattlefieldCard({ card, onTap, onContextMenu, getDropZone, onMove, batt
         if (!dragRef.current.moved && (Math.abs(dx - pos.x) > 4 || Math.abs(dy - pos.y) > 4)) {
             dragRef.current.moved = true;
             setDragging(true);
+            onFocus(card.instanceId);
             if (timerRef.current) {
                 clearTimeout(timerRef.current);
                 timerRef.current = null;
@@ -219,7 +220,7 @@ function BattlefieldCard({ card, onTap, onContextMenu, getDropZone, onMove, batt
     return (
         <motion.div
             initial={{ opacity: 0.9, scale: 1.2 }}
-            animate={{ opacity: 1, scale: 1, rotate: card.tapped ? 90 : 0 }}
+            animate={{ opacity: 1, scale: dragging ? 1.05 : 1, rotate: card.tapped ? 90 : 0 }}
             exit={{ opacity: 0, scale: 0.7 }}
             transition={{ type: 'spring', bounce: 0.3, duration: 0.3 }}
             style={{
@@ -230,7 +231,7 @@ function BattlefieldCard({ card, onTap, onContextMenu, getDropZone, onMove, batt
                 height: CARD_H,
                 cursor: dragging ? 'grabbing' : 'grab',
                 touchAction: 'none',
-                zIndex: dragging ? 1000 : 'auto',
+                zIndex: dragging ? zIndex + 100 : zIndex,
             }}
             onPointerDown={onPointerDown}
             onPointerMove={onPointerMove}
@@ -243,6 +244,52 @@ function BattlefieldCard({ card, onTap, onContextMenu, getDropZone, onMove, batt
                 alt={card.name}
                 css={cardImgStyle}
                 draggable={false}
+            />
+        </motion.div>
+    );
+}
+
+// ---- CardViewer ----
+
+const cardViewerOverlayStyle = css`
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.85);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 600;
+    cursor: pointer;
+`;
+
+const cardViewerImgStyle = css`
+    max-height: 85vh;
+    max-width: 90vw;
+    width: auto;
+    border-radius: 16px;
+    box-shadow: 0 8px 48px rgba(0,0,0,0.8);
+    pointer-events: none;
+`;
+
+function CardViewer({ card, onClose }) {
+    return (
+        <motion.div
+            css={cardViewerOverlayStyle}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.15 }}
+            onClick={onClose}
+        >
+            <motion.img
+                css={cardViewerImgStyle}
+                src={card.image_uri}
+                alt={card.name}
+                draggable={false}
+                initial={{ scale: 0.85 }}
+                animate={{ scale: 1 }}
+                exit={{ scale: 0.85 }}
+                transition={{ type: 'spring', bounce: 0.2, duration: 0.25 }}
             />
         </motion.div>
     );
@@ -438,7 +485,7 @@ const ZONE_DESTINATIONS = {
     ],
 };
 
-function ZoneViewer({ zoneName, cards, onMove, onClose }) {
+function ZoneViewer({ zoneName, cards, onMove, onClose, socket }) {
     const [cardMenu, setCardMenu] = useState(null); // { card, x, y }
 
     const destinations = ZONE_DESTINATIONS[zoneName] ?? [];
@@ -464,7 +511,17 @@ function ZoneViewer({ zoneName, cards, onMove, onClose }) {
         >
             <div css={zoneViewerHeaderStyle}>
                 <span css={zoneViewerTitleStyle}>{zoneName} ({cards.length})</span>
-                <button css={zoneViewerCloseStyle} onClick={onClose}>Close</button>
+                <div css={css`display: flex; gap: ${spacing.sm};`}>
+                    {(zoneName === 'graveyard' || zoneName === 'exile') && (
+                        <button
+                            css={zoneViewerCloseStyle}
+                            onClick={() => { socket.emit('shuffle_zone_into_library', { zone: zoneName }); onClose(); }}
+                        >
+                            Shuffle into Library
+                        </button>
+                    )}
+                    <button css={zoneViewerCloseStyle} onClick={onClose}>Close</button>
+                </div>
             </div>
 
             <div css={zoneViewerGridStyle}>
@@ -551,7 +608,10 @@ function BoardMenu({ x, y, onClose, setPage, revealedState, setRevealedState, so
 export default function Board({ socket, setPage }) {
     const [gameState, setGameState] = useState(null);
     const [battlefield, setBattlefield] = useState([]);
+    const [layers, setLayers] = useState({});
+    const layerCounter = useRef(0);
     const [contextMenu, setContextMenu] = useState(null);
+    const [cardViewer, setCardViewer] = useState(null);
     const [boardMenu, setBoardMenu] = useState(null);
     const [zoneViewer, setZoneViewer] = useState(null); // 'library' | 'graveyard' | 'exile'
     const [revealedState, setRevealedState] = useState(false);
@@ -559,20 +619,33 @@ export default function Board({ socket, setPage }) {
     useEffect(() => {
         socket.on('game_state_update', (state) => {
             setGameState(state);
+            if (!state) { setBattlefield([]); return; }
             setBattlefield(prev => {
-                // merge: keep local positions for existing cards, add new ones
                 const prevMap = Object.fromEntries(prev.map(c => [c.instanceId, c]));
                 return state.battlefield.map((c, i) => ({
                     ...c,
                     position: prevMap[c.instanceId]?.position ?? (c.position?.x || c.position?.y ? c.position : {
-                        x: 140 + (i % 6) * 120,
-                        y: 60 + Math.floor(i / 6) * 160,
+                        x: 20,
+                        y: 20,
                     }),
                 }));
+            });
+            setLayers(prev => {
+                const next = { ...prev };
+                for (const c of state.battlefield) {
+                    if (!(c.instanceId in next)) {
+                        next[c.instanceId] = ++layerCounter.current;
+                    }
+                }
+                return next;
             });
         });
         return () => socket.off('game_state_update');
     }, []);
+
+    function focusCard(instanceId) {
+        setLayers(prev => ({ ...prev, [instanceId]: ++layerCounter.current }));
+    }
 
     function handleTap(card) {
         const tapped = !card.tapped;
@@ -586,6 +659,7 @@ export default function Board({ socket, setPage }) {
 
     function handleContextMenu(card, x, y) {
         const items = [];
+        items.push({ label: 'View Card', action: () => setCardViewer(card) });
         if (!card.isToken) {
             items.push({ label: 'Move to Graveyard', action: () => move(card.instanceId, 'graveyard') });
             items.push({ label: 'Move to Exile', action: () => move(card.instanceId, 'exile') });
@@ -685,6 +759,8 @@ export default function Board({ socket, setPage }) {
                             getDropZone={getDropZone}
                             onMove={move}
                             battlefieldRef={battlefieldRef}
+                            zIndex={layers[card.instanceId] ?? 1}
+                            onFocus={focusCard}
                         />
                     ))}
                 </AnimatePresence>
@@ -697,11 +773,18 @@ export default function Board({ socket, setPage }) {
                         cards={zoneViewerCards}
                         onMove={handleZoneMove}
                         onClose={() => setZoneViewer(null)}
+                        socket={socket}
                     />
                 )}
             </AnimatePresence>
 
             <AnimatePresence>
+                {cardViewer && (
+                    <CardViewer
+                        card={cardViewer}
+                        onClose={() => setCardViewer(null)}
+                    />
+                )}
                 {contextMenu && (
                     <ContextMenu
                         card={contextMenu.card}

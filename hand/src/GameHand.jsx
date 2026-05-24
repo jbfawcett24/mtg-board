@@ -3,10 +3,11 @@ import { useEffect, useRef, useState } from 'react';
 import { css } from '@emotion/react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { socket } from './socket';
+import { radius } from '@mtg/shared';
 
 const LONG_PRESS_MS = 500;
 const CARD_ASPECT = 1 / 1.4;
-const OVERLAP = 0.38;
+const OVERLAP = 0.5;
 
 // ---- styles ----
 
@@ -152,13 +153,13 @@ function HandCard({ card, index, isSelected, onSelect, onPlay, playLabel }) {
                 }}
             >
                 <motion.div
-                    style={{
-                        borderRadius: 20,
-                        border: isSelected ? '3px solid #e94560' : '3px solid transparent',
-                        boxShadow: isSelected ? '0 0 24px rgba(233,69,96,0.5)' : '0 6px 20px rgba(0,0,0,0.7)',
-                        overflow: 'hidden',
-                        position: 'relative',
-                    }}
+                    css={css`
+                        border-radius: ${radius.card};
+                        border: ${isSelected ? '3px solid #e94560' : '3px solid transparent'};
+                        box-shadow: ${isSelected ? '0 0 24px rgba(233,69,96,0.5)' : '0 6px 20px rgba(0,0,0,0.7)'};
+                        overflow: hidden;
+                        position: relative;
+                    `}
                     initial={{ opacity: 0, scale: 0.9, y: 120}}
                     animate={{ opacity: 1, scale: isSelected ? 1.03 : 1, y: 0}}
                     exit={{ opacity: 0, scale: 0.9, y: -120 }}
