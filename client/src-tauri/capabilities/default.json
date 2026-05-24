@@ -10,6 +10,7 @@
     "sql:allow-select",
     "sql:allow-load",
     "dialog:allow-open",
-    "fs:allow-read-file"
+    "fs:allow-read-file",
+    "process:allow-exit"
   ]
 }

@@ -12,6 +12,7 @@
     "@mtg/shared": "*",
     "@tauri-apps/plugin-dialog": "^2.7.1",
     "@tauri-apps/plugin-fs": "^2.5.1",
+    "@tauri-apps/plugin-process": "^2.3.1",
     "@tauri-apps/plugin-sql": "^2.4.0",
     "framer-motion": "^12.38.0",
     "qrcode.react": "^4.2.0",

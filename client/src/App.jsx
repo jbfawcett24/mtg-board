@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { css } from '@emotion/react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { QRCodeSVG } from 'qrcode.react';
+import { exit } from '@tauri-apps/plugin-process';
 import { socket } from './socket';
 import { getDb, getDecks, getCardsForDeck, getTokensForDeck } from './db.js';
 import Modal from './Modal.jsx';
@@ -281,6 +282,9 @@ export default function App() {
           <span css={statusDotStyle(socketStatus === 'connected')} />
           <button css={importBtnStyle} onClick={() => setAddDeck(true)}>
             + Import Deck
+          </button>
+          <button css={css`${importBtnStyle}; color: ${colors.error}; border-color: ${colors.error};`} onClick={() => exit(0)}>
+            Quit
           </button>
         </div>
       </header>
