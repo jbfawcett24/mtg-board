@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { css } from '@emotion/react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { colors, spacing, radius } from '@mtg/shared';
@@ -85,7 +85,7 @@ const zoneEmptyStyle = css`
 const battlefieldStyle = css`
     flex: 1;
     position: relative;
-    overflow: hidden;
+    overflow: visible;
 `;
 
 const cardImgStyle = css`
@@ -143,11 +143,12 @@ const menuItemDangerStyle = css`
 
 // ---- BattlefieldCard ----
 
-function BattlefieldCard({ card, onTap, onContextMenu }) {
+function BattlefieldCard({ card, onTap, onContextMenu, getDropZone, onMove, battlefieldRef }) {
     const timerRef = useRef(null);
     const didLongPress = useRef(false);
     const dragRef = useRef(null);
     const [pos, setPos] = useState(card.position ?? { x: 100, y: 100 });
+    const [dragging, setDragging] = useState(false);
 
     function onPointerDown(e) {
         e.currentTarget.setPointerCapture(e.pointerId);
@@ -169,6 +170,7 @@ function BattlefieldCard({ card, onTap, onContextMenu }) {
         const dy = e.clientY - dragRef.current.startY;
         if (!dragRef.current.moved && (Math.abs(dx - pos.x) > 4 || Math.abs(dy - pos.y) > 4)) {
             dragRef.current.moved = true;
+            setDragging(true);
             if (timerRef.current) {
                 clearTimeout(timerRef.current);
                 timerRef.current = null;
@@ -187,9 +189,26 @@ function BattlefieldCard({ card, onTap, onContextMenu }) {
         if (!dragRef.current?.moved && !didLongPress.current) {
             onTap(card);
         }
+        const wasDragged = dragRef.current?.moved;
         dragRef.current = null;
+        setDragging(false);
+
+        if (wasDragged) {
+            const zone = getDropZone(e.clientX, e.clientY);
+            if (zone) {
+                onMove(card.instanceId, zone);
+                return;
+            }
+        }
+
         const GRID = 20;
-        setPos(prev => ({ x: Math.round(prev.x / GRID) * GRID, y: Math.round(prev.y / GRID) * GRID }));
+        const bf = battlefieldRef.current;
+        const maxX = bf ? bf.clientWidth - CARD_W : Infinity;
+        const maxY = bf ? bf.clientHeight - CARD_H : Infinity;
+        setPos(prev => ({
+            x: Math.min(maxX, Math.max(0, Math.round(prev.x / GRID) * GRID)),
+            y: Math.min(maxY, Math.max(0, Math.round(prev.y / GRID) * GRID)),
+        }));
     }
 
     function onPointerCancel() {
@@ -199,7 +218,7 @@ function BattlefieldCard({ card, onTap, onContextMenu }) {
 
     return (
         <motion.div
-            initial={{ opacity: 0, scale: 0.7 }}
+            initial={{ opacity: 0.9, scale: 1.2 }}
             animate={{ opacity: 1, scale: 1, rotate: card.tapped ? 90 : 0 }}
             exit={{ opacity: 0, scale: 0.7 }}
             transition={{ type: 'spring', bounce: 0.3, duration: 0.3 }}
@@ -209,8 +228,9 @@ function BattlefieldCard({ card, onTap, onContextMenu }) {
                 top: pos.y,
                 width: CARD_W,
                 height: CARD_H,
-                cursor: 'grab',
+                cursor: dragging ? 'grabbing' : 'grab',
                 touchAction: 'none',
+                zIndex: dragging ? 1000 : 'auto',
             }}
             onPointerDown={onPointerDown}
             onPointerMove={onPointerMove}
@@ -230,12 +250,56 @@ function BattlefieldCard({ card, onTap, onContextMenu }) {
 
 // ---- ZoneStack ----
 
-function ZoneStack({ label, cards, onClick, revealedState }) {
+const ZoneStack = React.forwardRef(function ZoneStack({ label, cards, onClick, revealedState, zoneName, onDragStart, onDragMove, onDragEnd }, ref) {
     const top = cards[cards.length - 1];
+    const dragRef = useRef(null);
+
+    function onPointerDown(e) {
+        if (!top) return;
+        e.currentTarget.setPointerCapture(e.pointerId);
+        dragRef.current = { moved: false, startX: e.clientX, startY: e.clientY };
+    }
+
+    function onPointerMove(e) {
+        if (!dragRef.current) return;
+        const dx = Math.abs(e.clientX - dragRef.current.startX);
+        const dy = Math.abs(e.clientY - dragRef.current.startY);
+        if (!dragRef.current.moved && (dx > 6 || dy > 6)) {
+            dragRef.current.moved = true;
+            onDragStart(top, zoneName, e.clientX, e.clientY);
+        }
+        if (dragRef.current.moved) {
+            onDragMove(e.clientX, e.clientY);
+        }
+    }
+
+    function onPointerUp(e) {
+        if (!dragRef.current) return;
+        const wasDragged = dragRef.current.moved;
+        dragRef.current = null;
+        if (wasDragged) {
+            onDragEnd(top, zoneName, e.clientX, e.clientY);
+        } else {
+            onClick();
+        }
+    }
+
+    function onPointerCancel() {
+        if (dragRef.current?.moved) onDragEnd(null, zoneName, 0, 0);
+        dragRef.current = null;
+    }
+
     return (
-        <div css={zoneStyle} onClick={onClick}>
+        <div
+            ref={ref}
+            css={zoneStyle}
+            onPointerDown={onPointerDown}
+            onPointerMove={onPointerMove}
+            onPointerUp={onPointerUp}
+            onPointerCancel={onPointerCancel}
+        >
             {top && revealedState ? (
-                <img css={zoneImgStyle} src={top.image_uri} alt={top.name} />
+                <img css={zoneImgStyle} src={top.image_uri} alt={top.name} draggable={false} />
             ) : (
                 <div css={zoneEmptyStyle} />
             )}
@@ -243,7 +307,7 @@ function ZoneStack({ label, cards, onClick, revealedState }) {
             <span css={zoneLabelStyle}>{label}</span>
         </div>
     );
-}
+});
 
 // ---- ContextMenu ----
 
@@ -500,10 +564,10 @@ export default function Board({ socket, setPage }) {
                 const prevMap = Object.fromEntries(prev.map(c => [c.instanceId, c]));
                 return state.battlefield.map((c, i) => ({
                     ...c,
-                    position: prevMap[c.instanceId]?.position ?? {
+                    position: prevMap[c.instanceId]?.position ?? (c.position?.x || c.position?.y ? c.position : {
                         x: 140 + (i % 6) * 120,
                         y: 60 + Math.floor(i / 6) * 160,
-                    },
+                    }),
                 }));
             });
         });
@@ -542,6 +606,52 @@ export default function Board({ socket, setPage }) {
         if (to === 'battlefield' || to === 'hand') setZoneViewer(null);
     }
 
+    const battlefieldRef = useRef(null);
+    const [zoneDrag, setZoneDrag] = useState(null); // { card, x, y }
+
+    function handleZoneDragStart(card, fromZone, clientX, clientY) {
+        setZoneDrag({ card, fromZone, x: clientX, y: clientY });
+    }
+
+    function handleZoneDragMove(clientX, clientY) {
+        setZoneDrag(prev => prev ? { ...prev, x: clientX, y: clientY } : null);
+    }
+
+    function handleZoneDragEnd(card, fromZone, clientX, clientY) {
+        setZoneDrag(null);
+        if (!card) return;
+        const bfRect = battlefieldRef.current?.getBoundingClientRect();
+        const x = bfRect ? Math.max(0, clientX - bfRect.left - CARD_W / 2) : clientX;
+        const y = bfRect ? Math.max(0, clientY - bfRect.top - CARD_H / 2) : clientY;
+        const GRID = 20;
+        socket.emit('move_zone_card', {
+            instanceId: card.instanceId ?? card.id,
+            from: fromZone,
+            to: 'battlefield',
+            position: { x: Math.round(x / GRID) * GRID, y: Math.round(y / GRID) * GRID },
+        });
+    }
+
+    const libraryRef = useRef(null);
+    const graveyardRef = useRef(null);
+    const exileRef = useRef(null);
+
+    function getDropZone(clientX, clientY) {
+        const zones = [
+            { ref: libraryRef, name: 'library_top' },
+            { ref: graveyardRef, name: 'graveyard' },
+            { ref: exileRef, name: 'exile' },
+        ];
+        for (const { ref, name } of zones) {
+            if (!ref.current) continue;
+            const rect = ref.current.getBoundingClientRect();
+            if (clientX >= rect.left && clientX <= rect.right && clientY >= rect.top && clientY <= rect.bottom) {
+                return name;
+            }
+        }
+        return null;
+    }
+
     const library = gameState?.library ?? [];
     const graveyard = gameState?.graveyard ?? [];
     const exile = gameState?.exile ?? [];
@@ -558,13 +668,13 @@ export default function Board({ socket, setPage }) {
                         ☰
                     </button>
                 </div>
-                <ZoneStack label="Library" cards={library} onClick={() => setZoneViewer('library')} revealedState={revealedState} />
-                <ZoneStack label="Graveyard" cards={graveyard} onClick={() => setZoneViewer('graveyard')} revealedState={true} />
-                <ZoneStack label="Exile" cards={exile} onClick={() => setZoneViewer('exile')} revealedState={true} />
+                <ZoneStack ref={libraryRef} label="Library" cards={library} onClick={() => setZoneViewer('library')} revealedState={revealedState} zoneName="library" onDragStart={handleZoneDragStart} onDragMove={handleZoneDragMove} onDragEnd={handleZoneDragEnd} />
+                <ZoneStack ref={graveyardRef} label="Graveyard" cards={graveyard} onClick={() => setZoneViewer('graveyard')} revealedState={true} zoneName="graveyard" onDragStart={handleZoneDragStart} onDragMove={handleZoneDragMove} onDragEnd={handleZoneDragEnd} />
+                <ZoneStack ref={exileRef} label="Exile" cards={exile} onClick={() => setZoneViewer('exile')} revealedState={true} zoneName="exile" onDragStart={handleZoneDragStart} onDragMove={handleZoneDragMove} onDragEnd={handleZoneDragEnd} />
                 <div css={css`flex: 1;`} />
             </div>
 
-            <div css={battlefieldStyle}>
+            <div ref={battlefieldRef} css={battlefieldStyle}>
                 <AnimatePresence>
                     {battlefield.map(card => (
                         <BattlefieldCard
@@ -572,6 +682,9 @@ export default function Board({ socket, setPage }) {
                             card={card}
                             onTap={handleTap}
                             onContextMenu={handleContextMenu}
+                            getDropZone={getDropZone}
+                            onMove={move}
+                            battlefieldRef={battlefieldRef}
                         />
                     ))}
                 </AnimatePresence>
@@ -610,6 +723,26 @@ export default function Board({ socket, setPage }) {
                     />
                 )}
             </AnimatePresence>
+
+            {zoneDrag && (
+                <img
+                    src={zoneDrag.card.image_uri}
+                    alt={zoneDrag.card.name}
+                    draggable={false}
+                    style={{
+                        position: 'fixed',
+                        left: zoneDrag.x - CARD_W / 2,
+                        top: zoneDrag.y - CARD_H / 2,
+                        width: CARD_W,
+                        borderRadius: 12,
+                        boxShadow: '0 8px 32px rgba(0,0,0,0.7)',
+                        pointerEvents: 'none',
+                        opacity: 0.9,
+                        zIndex: 1000,
+                        scale: 1.2
+                    }}
+                />
+            )}
         </div>
     );
 }

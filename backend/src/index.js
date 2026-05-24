@@ -178,7 +178,7 @@ io.on('connection', (socket) => {
   });
 
   // move_zone_card: move a card that is already in a non-battlefield zone
-  socket.on('move_zone_card', ({ instanceId, from, to }) => {
+  socket.on('move_zone_card', ({ instanceId, from, to, position }) => {
     const { code } = socket.data;
     if (!code) return;
     const session = sessions.get(code);
@@ -194,7 +194,7 @@ io.on('connection', (socket) => {
     const clean = { ...card, tapped: false, counters: [] };
     if (to === 'battlefield') {
       const id = clean.instanceId ?? `${from}-${clean.id}-${Date.now()}`;
-      session.gameState.battlefield.push({ ...clean, instanceId: id, position: { x: 0, y: 0 } });
+      session.gameState.battlefield.push({ ...clean, instanceId: id, position: position ?? { x: 0, y: 0 } });
     } else if (to === 'hand') {
       session.gameState.hand.push(clean);
     } else if (to === 'graveyard') {
