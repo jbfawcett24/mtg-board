@@ -151,12 +151,17 @@ const pickerHeadingStyle = css`
 `;
 
 const pickerGridStyle = css`
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    display: flex;
+    flex-wrap: wrap;
     gap: ${spacing.md};
     max-height: 60vh;
     overflow-y: auto;
     padding: ${spacing.xs};
+`;
+
+const pickerCardStyle = css`
+    width: 160px;
+    flex-shrink: 0;
 `;
 
 const cardButtonStyle = (selected) => css`
@@ -216,14 +221,15 @@ function CommanderPicker({ legendaries, onConfirm }) {
                     <p css={pickerHeadingStyle}>Select your Commander</p>
                     <div css={pickerGridStyle}>
                         {legendaries.map(card => (
-                            <button
-                                key={card.scryfall_id}
-                                type="button"
-                                css={cardButtonStyle(selected?.scryfall_id === card.scryfall_id)}
-                                onClick={() => setSelected(card)}
-                            >
-                                <img css={cardImgStyle} src={card.image_uri} alt={card.name} />
-                            </button>
+                            <div key={card.scryfall_id} css={pickerCardStyle}>
+                                <button
+                                    type="button"
+                                    css={cardButtonStyle(selected?.scryfall_id === card.scryfall_id)}
+                                    onClick={() => setSelected(card)}
+                                >
+                                    <img css={cardImgStyle} src={card.image_uri} alt={card.name} />
+                                </button>
+                            </div>
                         ))}
                     </div>
                     <button
@@ -244,7 +250,7 @@ function CommanderPicker({ legendaries, onConfirm }) {
 export default function CreateDeck({ onClose }) {
     const [legendaries, setLegendaries] = useState(null);
     const [pendingData, setPendingData] = useState(null);
-    const [saving, setSaving] = useState(false);
+    const [status, setStatus] = useState(null);
 
     async function formSubmit(e) {
         e.preventDefault();
@@ -254,6 +260,7 @@ export default function CreateDeck({ onClose }) {
         const decklist = formData.get('decklist');
         const parsed   = parseDecklist(decklist);
 
+        setStatus('Fetching cards from Scryfall…');
         const { cards, tokens, notFound } = await resolveCollection(parsed);
 
         if (notFound.length > 0) {
@@ -261,17 +268,20 @@ export default function CreateDeck({ onClose }) {
         }
 
         if (format === 'commander') {
+            setStatus(null);
             const legendaryCards = cards.filter(c => c.is_legendary);
             setPendingData({ deckName, format, cards, tokens });
             setLegendaries(legendaryCards);
         } else {
+            setStatus('Saving deck…');
             await saveDeck(deckName, format, cards, tokens, null);
+            setStatus(null);
             onClose();
         }
     }
 
     async function handleCommanderConfirm(commander) {
-        setSaving(true);
+        setStatus('Saving deck…');
         await saveDeck(
             pendingData.deckName,
             pendingData.format,
@@ -279,7 +289,7 @@ export default function CreateDeck({ onClose }) {
             pendingData.tokens,
             commander.scryfall_id
         );
-        setSaving(false);
+        setStatus(null);
         setLegendaries(null);
         setPendingData(null);
         onClose();
@@ -314,8 +324,8 @@ export default function CreateDeck({ onClose }) {
                 </div>
 
                 <div css={footerStyle}>
-                    {saving && <span css={savingStyle}>Saving deck…</span>}
-                    <button css={submitBtnStyle} type="submit" disabled={saving}>Import</button>
+                    {status && <span css={savingStyle}>{status}</span>}
+                    <button css={submitBtnStyle} type="submit" disabled={!!status}>Import</button>
                 </div>
             </form>
 

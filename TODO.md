@@ -13,6 +13,13 @@ TODO - Board
 - [x] grid snapping
 - [x] scroll to end of hand on card draw
 - [ ] Counters (+1/+1 and generic)
+- [x] feedback on api requests
+- [ ] make select commander modal not look like crap
+- [ ] QR code auto join game
+- [ ] Tapping card on touchscreen doesnt tap
+- [ ] card context menu appearing at center of tap, not at corner
+- [ ] Button to quit game
+
 TODO - Deck editor
 - [x] change card image from scryfall
 - [ ] custom card upload

@@ -151,6 +151,7 @@ function BattlefieldCard({ card, onTap, onContextMenu, getDropZone, onMove, batt
     const [dragging, setDragging] = useState(false);
 
     function onPointerDown(e) {
+        e.preventDefault();
         e.currentTarget.setPointerCapture(e.pointerId);
         didLongPress.current = false;
         const startX = e.clientX - pos.x;
@@ -372,6 +373,7 @@ function ContextMenu({ card, x, y, onClose, items }) {
     const style = {
         top: Math.min(y, window.innerHeight - (items.length * 44 + 8)),
         left: Math.min(x, window.innerWidth - 180),
+        transformOrigin: 'top left',
     };
 
     return (
