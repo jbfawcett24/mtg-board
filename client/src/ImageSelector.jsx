@@ -29,9 +29,8 @@ export default function ImageSelector({ card, onSelect, onClose }) {
     if (!id) return;
 
     async function load() {
-      const cardData = await fetch(`https://api.scryfall.com/cards/${id}`).then(r => r.json());
       const prints = await fetch(
-        `https://api.scryfall.com/cards/search?q=oracleid:${cardData.oracle_id}&unique=art`
+        `https://api.scryfall.com/cards/search?q=!${encodeURIComponent(card.name)}&unique=art`
       ).then(r => r.json());
       setImages(prints.data ?? []);
     }

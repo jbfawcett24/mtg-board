@@ -12,6 +12,7 @@ TODO - Board
 - [ ] move all board to graveyard/exile/hand/library
 - [x] grid snapping
 - [x] scroll to end of hand on card draw
+- [ ] Counters (+1/+1 and generic)
 TODO - Deck editor
 - [x] change card image from scryfall
 - [ ] custom card upload
