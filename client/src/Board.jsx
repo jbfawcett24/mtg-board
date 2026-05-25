@@ -141,9 +141,121 @@ const menuItemDangerStyle = css`
     color: ${colors.error};
 `;
 
+const counterStyle = css`
+    position: absolute;
+    z-index: 1;
+    background: #00000093;
+    color: ${colors.textPrimary};
+    border-radius: ${radius.sm};
+    padding: 2px 6px;
+`
+
+const counterModalOverlayStyle = css`
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 700;
+`;
+
+const counterModalBoxStyle = css`
+    background: ${colors.bgRaised};
+    border: 1px solid ${colors.border};
+    border-radius: ${radius.md};
+    padding: ${spacing.lg};
+    min-width: 280px;
+    display: flex;
+    flex-direction: column;
+    gap: ${spacing.md};
+`;
+
+const counterRowStyle = css`
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: ${spacing.md};
+`;
+
+const counterStepBtnStyle = css`
+    background: ${colors.bgSurface};
+    border: 1px solid ${colors.border};
+    color: ${colors.textPrimary};
+    border-radius: ${radius.sm};
+    width: 32px;
+    height: 32px;
+    font-size: 1.2rem;
+    cursor: pointer;
+    &:hover { border-color: ${colors.accent}; }
+`;
+
+const counterAddBtnStyle = css`
+    background: ${colors.accent};
+    border: none;
+    color: white;
+    border-radius: ${radius.sm};
+    padding: ${spacing.xs} ${spacing.md};
+    cursor: pointer;
+    font-size: 0.9rem;
+    align-self: flex-end;
+    &:hover { background: ${colors.accentHover}; }
+`;
+
+// ---- CounterModal ----
+
+function CounterModal({ card, counters, onAdd, onClose }) {
+    const [oneOne, setOneOne] = useState(0);
+    const [generic, setGeneric] = useState(0);
+
+    return (
+        <motion.div
+            css={counterModalOverlayStyle}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.15 }}
+            onClick={onClose}
+        >
+            <motion.div
+                css={counterModalBoxStyle}
+                initial={{ scale: 0.9 }}
+                animate={{ scale: 1 }}
+                exit={{ scale: 0.9 }}
+                transition={{ type: 'spring', bounce: 0.2, duration: 0.2 }}
+                onClick={e => e.stopPropagation()}
+            >
+                <span css={css`color: ${colors.textPrimary}; font-weight: bold;`}>{card.name}</span>
+
+                <div css={counterRowStyle}>
+                    <span css={css`color: ${colors.textMuted}; font-size: 0.9rem;`}>+1/+1 counters ({counters.oneOne})</span>
+                    <div css={css`display: flex; align-items: center; gap: ${spacing.sm};`}>
+                        <button css={counterStepBtnStyle} onClick={() => setOneOne(v => Math.max(-(counters.oneOne), v - 1))}>−</button>
+                        <span css={css`color: ${colors.textPrimary}; min-width: 24px; text-align: center;`}>{oneOne > 0 ? `+${oneOne}` : oneOne}</span>
+                        <button css={counterStepBtnStyle} onClick={() => setOneOne(v => v + 1)}>+</button>
+                    </div>
+                </div>
+
+                <div css={counterRowStyle}>
+                    <span css={css`color: ${colors.textMuted}; font-size: 0.9rem;`}>Generic counters ({counters.generic})</span>
+                    <div css={css`display: flex; align-items: center; gap: ${spacing.sm};`}>
+                        <button css={counterStepBtnStyle} onClick={() => setGeneric(v => Math.max(-(counters.generic), v - 1))}>−</button>
+                        <span css={css`color: ${colors.textPrimary}; min-width: 24px; text-align: center;`}>{generic > 0 ? `+${generic}` : generic}</span>
+                        <button css={counterStepBtnStyle} onClick={() => setGeneric(v => v + 1)}>+</button>
+                    </div>
+                </div>
+
+                <button css={counterAddBtnStyle} onClick={() => { onAdd(card.instanceId, oneOne, generic); onClose(); }}>
+                    Apply
+                </button>
+            </motion.div>
+        </motion.div>
+    );
+}
+
 // ---- BattlefieldCard ----
 
-function BattlefieldCard({ card, onTap, onContextMenu, getDropZone, onMove, battlefieldRef, zIndex, onFocus }) {
+function BattlefieldCard({ card, onTap, onContextMenu, getDropZone, onMove, battlefieldRef, zIndex, onFocus, oneOneCounters, genericCounters }) {
     const timerRef = useRef(null);
     const didLongPress = useRef(false);
     const dragRef = useRef(null);
@@ -246,6 +358,8 @@ function BattlefieldCard({ card, onTap, onContextMenu, getDropZone, onMove, batt
                 css={cardImgStyle}
                 draggable={false}
             />
+            {oneOneCounters > 0 && <span css={[counterStyle, { bottom: spacing.xs, left: spacing.xs }]}>+{oneOneCounters}/+{oneOneCounters}</span>}
+            {genericCounters > 0 && <span css={[counterStyle, { bottom: '50%', right: '50%', transform: 'translate(50%, 50%)' }]}>{genericCounters}</span>}
         </motion.div>
     );
 }
@@ -615,8 +729,10 @@ export default function Board({ socket, setPage }) {
     const [contextMenu, setContextMenu] = useState(null);
     const [cardViewer, setCardViewer] = useState(null);
     const [boardMenu, setBoardMenu] = useState(null);
-    const [zoneViewer, setZoneViewer] = useState(null); // 'library' | 'graveyard' | 'exile'
+    const [zoneViewer, setZoneViewer] = useState(null);
     const [revealedState, setRevealedState] = useState(false);
+    const [cardCounters, setCardCounters] = useState({}); // { [instanceId]: { oneOne, generic } }
+    const [counterModal, setCounterModal] = useState(null); // card
 
     useEffect(() => {
         socket.on('game_state_update', (state) => {
@@ -659,9 +775,17 @@ export default function Board({ socket, setPage }) {
         socket.emit('move_card', { instanceId, to });
     }
 
+    function handleAddCounters(instanceId, oneOne, generic) {
+        setCardCounters(prev => {
+            const cur = prev[instanceId] ?? { oneOne: 0, generic: 0 };
+            return { ...prev, [instanceId]: { oneOne: Math.max(0, cur.oneOne + oneOne), generic: Math.max(0, cur.generic + generic) } };
+        });
+    }
+
     function handleContextMenu(card, x, y) {
         const items = [];
         items.push({ label: 'View Card', action: () => setCardViewer(card) });
+        items.push({ label: 'Add/Remove Counters', action: () => setCounterModal(card) });
         if (!card.isToken) {
             items.push({ label: 'Move to Graveyard', action: () => move(card.instanceId, 'graveyard') });
             items.push({ label: 'Move to Exile', action: () => move(card.instanceId, 'exile') });
@@ -763,6 +887,8 @@ export default function Board({ socket, setPage }) {
                             battlefieldRef={battlefieldRef}
                             zIndex={layers[card.instanceId] ?? 1}
                             onFocus={focusCard}
+                            oneOneCounters={cardCounters[card.instanceId]?.oneOne ?? 0}
+                            genericCounters={cardCounters[card.instanceId]?.generic ?? 0}
                         />
                     ))}
                 </AnimatePresence>
@@ -785,6 +911,14 @@ export default function Board({ socket, setPage }) {
                     <CardViewer
                         card={cardViewer}
                         onClose={() => setCardViewer(null)}
+                    />
+                )}
+                {counterModal && (
+                    <CounterModal
+                        card={counterModal}
+                        counters={cardCounters[counterModal.instanceId] ?? { oneOne: 0, generic: 0 }}
+                        onAdd={handleAddCounters}
+                        onClose={() => setCounterModal(null)}
                     />
                 )}
                 {contextMenu && (

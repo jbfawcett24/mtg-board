@@ -15,10 +15,11 @@ TODO - Board
 - [ ] Counters (+1/+1 and generic)
 - [x] feedback on api requests
 - [x] make select commander modal not look like crap
-- [ ] QR code auto join game
+- [x] QR code auto join game
 - [x] Tapping card on touchscreen doesnt tap
 - [x] card context menu appearing at center of tap, not at corner
-- [ ] Button to quit game
+- [x] Button to quit game
+- [ ] Double faced cards (flip in hand and on battlefield)
 
 TODO - Deck editor
 - [x] change card image from scryfall

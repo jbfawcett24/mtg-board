@@ -13,7 +13,12 @@ export default function App() {
   useEffect(() => {
     socket.connect();
 
-    socket.on('connect', () => setStatus('connected'));
+    socket.on('connect', () => {
+      setStatus('connected');
+      const params = new URLSearchParams(window.location.search);
+      const code = params.get('code');
+      if (code) socket.emit('join_game', { code: code.toUpperCase() });
+    });
     socket.on('disconnect', () => {
       setStatus('disconnected');
       setGameCode(null);
