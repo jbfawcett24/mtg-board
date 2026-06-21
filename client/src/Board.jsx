@@ -255,12 +255,13 @@ function CounterModal({ card, counters, onAdd, onClose }) {
 
 // ---- BattlefieldCard ----
 
-function BattlefieldCard({ card, onTap, onContextMenu, getDropZone, onMove, battlefieldRef, zIndex, onFocus, oneOneCounters, genericCounters }) {
+function BattlefieldCard({ card, onTap, onContextMenu, getDropZone, onMove, battlefieldRef, zIndex, onFocus, oneOneCounters, genericCounters, contextOptions }) {
     const timerRef = useRef(null);
     const didLongPress = useRef(false);
     const dragRef = useRef(null);
     const [pos, setPos] = useState(card.position ?? { x: 100, y: 100 });
     const [dragging, setDragging] = useState(false);
+    const [showBack, setShowBack] = useState(false);
 
     function onPointerDown(e) {
         e.preventDefault();
@@ -273,7 +274,7 @@ function BattlefieldCard({ card, onTap, onContextMenu, getDropZone, onMove, batt
         timerRef.current = setTimeout(() => {
             timerRef.current = null;
             didLongPress.current = true;
-            onContextMenu(card, e.clientX, e.clientY);
+            onContextMenu(card, e.clientX, e.clientY, setShowBack);
         }, LONG_PRESS_MS);
     }
 
@@ -350,10 +351,10 @@ function BattlefieldCard({ card, onTap, onContextMenu, getDropZone, onMove, batt
             onPointerMove={onPointerMove}
             onPointerUp={onPointerUp}
             onPointerCancel={onPointerCancel}
-            onContextMenu={e => { e.preventDefault(); onContextMenu(card, e.clientX, e.clientY); }}
+            onContextMenu={e => { e.preventDefault(); onContextMenu(card, e.clientX, e.clientY, setShowBack); }}
         >
             <img
-                src={card.image_uri}
+                src={showBack ? card.image_uri_back : card.image_uri}
                 alt={card.name}
                 css={cardImgStyle}
                 draggable={false}
@@ -386,7 +387,7 @@ const cardViewerImgStyle = css`
     pointer-events: none;
 `;
 
-function CardViewer({ card, onClose }) {
+function CardViewer({ name, image, onClose }) {
     return (
         <motion.div
             css={cardViewerOverlayStyle}
@@ -398,8 +399,8 @@ function CardViewer({ card, onClose }) {
         >
             <motion.img
                 css={cardViewerImgStyle}
-                src={card.image_uri}
-                alt={card.name}
+                src={image}
+                alt={name}
                 draggable={false}
                 initial={{ scale: 0.85 }}
                 animate={{ scale: 1 }}
@@ -782,10 +783,13 @@ export default function Board({ socket, setPage }) {
         });
     }
 
-    function handleContextMenu(card, x, y) {
+    function handleContextMenu(card, x, y, setShowBack) {
         const items = [];
         items.push({ label: 'View Card', action: () => setCardViewer(card) });
         items.push({ label: 'Add/Remove Counters', action: () => setCounterModal(card) });
+        if(card.image_uri_back) {
+            items.push({ label: 'Turn Over', action: () => setShowBack(prev => !prev)})
+        }
         if (!card.isToken) {
             items.push({ label: 'Move to Graveyard', action: () => move(card.instanceId, 'graveyard') });
             items.push({ label: 'Move to Exile', action: () => move(card.instanceId, 'exile') });
