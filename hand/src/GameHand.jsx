@@ -104,6 +104,7 @@ function HandCard({ card, index, isSelected, onSelect, onPlay, playLabel }) {
     const timerRef = useRef(null);
     const cardRef = useRef(null);
     const [previewing, setPreviewing] = useState(false);
+    const [showBack, setShowBack] = useState(false);
 
     const maxH = window.innerHeight * 0.72;
     const maxW = window.innerWidth * 0.82;
@@ -171,7 +172,7 @@ function HandCard({ card, index, isSelected, onSelect, onPlay, playLabel }) {
                     onContextMenu={e => e.preventDefault()}
                 >
                     <img
-                        src={card.image_uri}
+                        src={showBack ? card.image_uri_back : card.image_uri}
                         alt={card.name}
                         draggable={false}
                         style={{ width: '100%', height: 'auto', display: 'block' }}
@@ -226,6 +227,23 @@ function HandCard({ card, index, isSelected, onSelect, onPlay, playLabel }) {
                                 >
                                     Cancel
                                 </button>
+                                {card.image_uri_back &&
+                                    <button
+                                        style={{
+                                            padding: '10px 24px',
+                                            borderRadius: 8,
+                                            border: '1px solid rgba(255,255,255,0.3)',
+                                            background: 'none',
+                                            color: '#cccccc',
+                                            fontSize: '0.9rem',
+                                            cursor: 'pointer',
+                                            minWidth: 120,
+                                        }}
+                                        onPointerDown={e => { e.stopPropagation(); setShowBack(prev => !prev); }}
+                                    >
+                                        Turn Over
+                                    </button>
+                                }
                             </motion.div>
                         )}
                     </AnimatePresence>

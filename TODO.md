@@ -12,14 +12,15 @@ TODO - Board
 - [ ] move all board to graveyard/exile/hand/library
 - [x] grid snapping
 - [x] scroll to end of hand on card draw
-- [ ] Counters (+1/+1 and generic)
+- [x] Counters (+1/+1 and generic)
 - [x] feedback on api requests
 - [x] make select commander modal not look like crap
 - [x] QR code auto join game
 - [x] Tapping card on touchscreen doesnt tap
 - [x] card context menu appearing at center of tap, not at corner
 - [x] Button to quit game
-- [ ] Double faced cards (flip in hand and on battlefield)
+- [ ] Double faced cards (flip in hand and on ~~battlefield~~)
+- [ ] Have cards face down
 
 TODO - Deck editor
 - [x] change card image from scryfall

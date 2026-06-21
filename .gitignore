@@ -6,3 +6,4 @@ target/
 backend/uploads/
 uploads/
 .idea/
+.env.production
