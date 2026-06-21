@@ -19,8 +19,11 @@ TODO - Board
 - [x] Tapping card on touchscreen doesnt tap
 - [x] card context menu appearing at center of tap, not at corner
 - [x] Button to quit game
-- [ ] Double faced cards (flip in hand and on ~~battlefield~~)
+- [x] Double faced cards (flip in hand and on ~~battlefield~~)
 - [ ] Have cards face down
+- [ ] Move cards straight to zones from hand
+- [ ] look at top x of library in hand
+- [ ] Format selector on import deck looks bad
 
 TODO - Deck editor
 - [x] change card image from scryfall
