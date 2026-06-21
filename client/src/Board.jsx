@@ -274,7 +274,7 @@ function BattlefieldCard({ card, onTap, onContextMenu, getDropZone, onMove, batt
         timerRef.current = setTimeout(() => {
             timerRef.current = null;
             didLongPress.current = true;
-            onContextMenu(card, e.clientX, e.clientY, setShowBack);
+            onContextMenu(card, e.clientX, e.clientY, setShowBack, showBack);
         }, LONG_PRESS_MS);
     }
 
@@ -351,7 +351,7 @@ function BattlefieldCard({ card, onTap, onContextMenu, getDropZone, onMove, batt
             onPointerMove={onPointerMove}
             onPointerUp={onPointerUp}
             onPointerCancel={onPointerCancel}
-            onContextMenu={e => { e.preventDefault(); onContextMenu(card, e.clientX, e.clientY, setShowBack); }}
+            onContextMenu={e => { e.preventDefault(); onContextMenu(card, e.clientX, e.clientY, setShowBack, showBack); }}
         >
             <img
                 src={showBack ? card.image_uri_back : card.image_uri}
@@ -783,9 +783,9 @@ export default function Board({ socket, setPage }) {
         });
     }
 
-    function handleContextMenu(card, x, y, setShowBack) {
+    function handleContextMenu(card, x, y, setShowBack, showBack) {
         const items = [];
-        items.push({ label: 'View Card', action: () => setCardViewer(card) });
+        items.push({ label: 'View Card', action: () => setCardViewer({name: card.name, image: showBack ? card.image_uri_back : card.image_uri}) });
         items.push({ label: 'Add/Remove Counters', action: () => setCounterModal(card) });
         if(card.image_uri_back) {
             items.push({ label: 'Turn Over', action: () => setShowBack(prev => !prev)})
@@ -913,7 +913,8 @@ export default function Board({ socket, setPage }) {
             <AnimatePresence>
                 {cardViewer && (
                     <CardViewer
-                        card={cardViewer}
+                        name={cardViewer.name}
+                        image={cardViewer.image}
                         onClose={() => setCardViewer(null)}
                     />
                 )}
