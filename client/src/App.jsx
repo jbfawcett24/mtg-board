@@ -220,7 +220,7 @@ export default function App() {
 
   if (page === 'board') {
     return (
-      <Board socket={socket} setPage={setPage}/>
+      <Board socket={socket} setPage={setPage} />
     );
   }
 
@@ -306,7 +306,7 @@ export default function App() {
                   exit={{ opacity: 0, scale: 0.95 }}
                   transition={{ type: 'spring', bounce: 0.2 }}
                   css={deckCardStyle(selectedDeck?.id === deck.id)}
-                  onClick={() => {setSelectedDeck(deck); console.log(deck)}}
+                  onClick={() => { setSelectedDeck(deck); console.log(deck) }}
                 >
                   <p css={deckNameStyle}>{deck.name}</p>
                   <p css={deckMetaStyle}>{deck.format}</p>

@@ -1,685 +1,722 @@
-import { useEffect, useState } from 'react';
-import { css } from '@emotion/react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { getCardsForDeck, getTokensForDeck, getDb, deleteDeck } from './db.js';
-import { pickAndUploadCardImage } from './api/uploadImage.js';
-import { colors, spacing, radius } from '@mtg/shared';
-import ImageSelector from './ImageSelector.jsx';
+import { useState, useEffect, useLayoutEffect, useRef } from "react"
+import { changeCardImage, deleteDeck, getCardsForDeck, getDb, insertCard, removeCard, setCommander } from "./db.js"
+import { css } from "@emotion/react"
+import { colors, spacing, radius } from "@mtg/shared"
+import Modal from "./Modal.jsx"
+import { getAllImages, scryfallSearch, toDbCard } from "./api/scryfall.js"
 
-const layoutStyle = css`
-    height: 100vh;
-    display: flex;
-    flex-direction: column;
-    background: ${colors.bgBase};
-    color: ${colors.textPrimary};
-    font-family: sans-serif;
-`;
-
-const headerStyle = css`
-    display: flex;
-    align-items: center;
-    gap: ${spacing.md};
-    padding: ${spacing.sm} ${spacing.lg};
-    background: ${colors.bgSurface};
-    border-bottom: 1px solid ${colors.border};
-    flex-shrink: 0;
-`;
-
-const backBtnStyle = css`
-    padding: ${spacing.xs} ${spacing.md};
-    background: none;
-    border: 1px solid ${colors.border};
-    color: ${colors.textMuted};
-    border-radius: ${radius.md};
-    cursor: pointer;
-    font-size: 0.8rem;
-    min-width: fit-content;
-    &:hover { border-color: ${colors.accent}; color: ${colors.textPrimary}; }
-`;
-
-const titleStyle = css`
-    font-size: 1.1rem;
-    font-weight: bold;
-    width: fit-content;
-    color: ${colors.textPrimary};
-`;
-
-const deleteBtnStyle = css`
-    padding: ${spacing.xs} ${spacing.md};
-    background: none;
-    border: 1px solid ${colors.error};
-    color: ${colors.error};
-    border-radius: ${radius.md};
-    cursor: pointer;
-    font-size: 0.8rem;
-    min-width: fit-content;
-    &:hover { background: ${colors.error}; color: ${colors.textPrimary}; }
+const mainCss = css`
+  background-color: yellow;
+  width: 100vw;
+  height: 100vh;
+  display: grid;
+  grid-template-columns: 1fr 4fr;
+  grid-template-rows: ${spacing.xxl} 1fr;
 `
 
-const bodyStyle = css`
-    flex: 1;
-    display: flex;
-    overflow: hidden;
-`;
 
-const listStyle = css`
-    width: 320px;
-    flex-shrink: 0;
+const deleteCss = css`
+    padding: ${spacing.xs} ${spacing.sm};
+    background-color: ${colors.accent};
+    border: 1px solid transparent;
+    cursor: pointer;
+    border-radius: ${radius.sm};
+    color: ${colors.textPrimary};
+    &:hover { background-color: ${colors.accentHover}
+  `
+
+
+export default function DeckEditor({ deck, onBack }) {
+  const [deckName, setDeckName] = useState(deck.name);
+  const [deleteModal, setDeleteModal] = useState(false)
+  const [hoverCardImage, setHoverCardImage] = useState(null)
+
+  async function deckNameChange() {
+    const newName = deckName.trim();
+    if (!newName || newName === deck.name) return
+    const db = await getDb()
+    await db.execute('UPDATE decks SET name = $1 WHERE id = $2', [newName, deck.id])
+    deck.name = newName
+  }
+
+  function handleDelete() {
+    setDeleteModal(true)
+  }
+
+  return (
+    <>
+      <div
+        css={mainCss}
+      >
+        <EditorHeader
+          onBack={onBack}
+          deckName={deckName}
+          setDeckName={setDeckName}
+          deckNameChange={async () => { deckNameChange() }}
+          onDelete={handleDelete}
+        />
+        <HoverCardImage card={hoverCardImage} />
+        <CardList deck={deck} onCardHover={setHoverCardImage} />
+      </div>
+      <Modal
+        onClose={() => setDeleteModal(false)}
+        isOpen={deleteModal}
+        size="sm"
+      >
+        <div
+          css={css`
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            padding: ${spacing.xxl}
+          `}
+        >
+          <h2>Confirm Delete</h2>
+          <div
+            css={css`
+              display: flex;
+              align-items: center;
+              justify-content: space-evenly;
+              width: 100%;
+            `}
+          >
+            <button
+              css={deleteCss}
+              onClick={async () => {
+                await deleteDeck(deck.id)
+                onBack()
+              }}
+            >
+              Delete
+            </button>
+            <button
+              css={css`
+                padding: ${spacing.xs} ${spacing.sm};
+                cursor: pointer;
+              `}
+              onClick={() => {
+                setDeleteModal(false);
+              }}
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      </Modal >
+      )
+    </>
+  )
+}
+
+function EditorHeader({ deckName, setDeckName, onBack, deckNameChange, onDelete }) {
+
+  const headerCss = css`
+    grid-row: 1/2;
+    grid-column: 1/-1;
+    background-color: ${colors.bgSurface};
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 ${spacing.lg};
+  `
+
+  const inputWrapper = css`
+    position: relative;
+    width: 33%;
+
+    &:after {
+      content: "";
+      position: absolute;
+      left: 0;
+      bottom: 0;
+      height: 2px;
+      width: 0;
+      background-color: ${colors.border};
+      transition: width 0.3s ease, background-color 0.3s ease;
+    }
+
+    &:hover:after {
+      width: 100%;
+    }
+
+    &:focus-within:after {
+      width: 100%;
+      background-color: ${colors.borderFocus};
+    }
+  `;
+
+  const inputCss = css`
+    background-color: transparent;
+    font-size: 1.1rem;
+    font-weight: bold;
+    width: 100%;
+    color: ${colors.textPrimary};
+    border: none;
+    outline: none;
+  `;
+
+  const buttonCss = css`
+    background: none;
+    padding: ${spacing.xs} ${spacing.sm};
+    border: 1px solid ${colors.border};
+    border-radius: ${radius.sm};
+    color: ${colors.textPrimary};
+    cursor: pointer;
+    &:hover { 
+      background-color: ${colors.bgRaised};
+    }
+  `
+
+  return (
+    <div
+      css={headerCss}
+    >
+      <div
+        css={inputWrapper}
+      >
+        <input
+          css={inputCss}
+          type="text"
+          value={deckName}
+          onChange={(e) => { setDeckName(e.target.value) }}
+          onBlur={() => { deckNameChange() }}
+        />
+      </div>
+      <div
+        css={css`
+          display: flex;
+          gap: 10px;
+        `}
+      >
+        <button
+          css={deleteCss}
+          onClick={onDelete}
+        >
+          Delete
+        </button>
+        <button
+          css={buttonCss}
+          onClick={onBack}
+        >Back</button>
+      </div>
+    </div >
+  )
+}
+
+function CardList({ deck, onCardHover }) {
+  const [cards, setCards] = useState([])
+  const [search, setSearch] = useState("")
+  const [searchResults, setSearchResults] = useState(null)
+  const [displayCardList, setDisplayCardList] = useState([])
+  const [menu, setMenu] = useState(null)
+  const [addMoreModal, setAddMoreModal] = useState(null)
+  const [addMoreAmount, setAddMoreAmount] = useState(3)
+  const [loading, setLoading] = useState(false)
+  const [cardImages, setCardImages] = useState({ loading: false, images: null })
+
+  const CATEGORY_ORDER = [
+    'Commander',
+    'Creature',
+    'Sorcery',
+    'Instant',
+    'Artifact',
+    'Enchantment',
+    'Planeswalker',
+    'Battle',
+    'Land',
+  ]
+
+  function getCardCategory(card) {
+    if (card.board === 'commander') return 'Commander'
+
+    const typeLine = card.type_line ?? ''
+    if (typeLine.includes('Creature')) return 'Creature'
+    if (typeLine.includes('Sorcery')) return 'Sorcery'
+    if (typeLine.includes('Instant')) return 'Instant'
+    if (typeLine.includes('Artifact')) return 'Artifact'
+    if (typeLine.includes('Enchantment')) return 'Enchantment'
+    if (typeLine.includes('Planeswalker')) return 'Planeswalker'
+    if (typeLine.includes('Battle')) return 'Battle'
+    if (typeLine.includes('Land')) return 'Land'
+    return 'Other'
+  }
+
+  useEffect(() => {
+    getCardsForDeck(deck.id).then(setCards)
+  }, [deck.id])
+
+  useEffect(() => {
+    const grouped = CATEGORY_ORDER.reduce((acc, category) => {
+      acc[category] = []
+      return acc
+    }, {})
+
+    cards.forEach(card => {
+      const category = getCardCategory(card)
+      if (!grouped[category]) grouped[category] = []
+      grouped[category].push(card)
+    })
+
+    const displayList = [...CATEGORY_ORDER, 'Other']
+      .filter(category => grouped[category]?.length > 0)
+      .map(category => ({ category, cards: grouped[category] }))
+
+    setDisplayCardList(displayList)
+  }, [cards])
+
+  const handleSearch = async (e) => {
+    setLoading((true))
+    e.preventDefault()
+    if (!search.trim()) return;
+    const data = await scryfallSearch(search, deck.format)
+    setSearchResults(data.data)
+    setLoading(false)
+  }
+
+  async function addCard(card) {
+    const dbCard = toDbCard(card, 1, "main")
+    await insertCard(deck.id, dbCard)
+    const updated = await getCardsForDeck(deck.id)
+    setCards(updated)
+  }
+
+  const cardListCss = css`
+    grid-row: 2/-1;
+    grid-column: 2/-1;
+    background-color: ${colors.bgBase};
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    border-right: 1px solid ${colors.border};
-`;
+    padding: ${spacing.md};
+  `
 
-const listScrollStyle = css`
-    flex: 1;
-    overflow-y: auto;
-    padding: ${spacing.xs} 0;
-`;
-
-const previewPaneStyle = css`
-    flex: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-`;
-
-const previewImgStyle = css`
-    width: 280px;
-    border-radius: ${radius.card};
-    box-shadow: 0 8px 32px rgba(0,0,0,0.6);
-`;
-
-const placeholderStyle = css`
-    color: ${colors.textFaint};
-    font-size: 0.9rem;
-`;
-
-const rowBaseStyle = css`
-    display: flex;
-    align-items: center;
-    padding: ${spacing.xs} ${spacing.sm};
-    gap: ${spacing.xs};
-    cursor: default;
-`;
-
-const rowNameStyle = css`
-    font-size: 0.9rem;
-    color: ${colors.textPrimary};
-    flex: 1;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-`;
-
-const boardSelectStyle = css`
-    background: ${colors.bgRaised};
-    border: 1px solid ${colors.border};
-    color: ${colors.textMuted};
-    border-radius: ${radius.sm};
-    font-size: 0.7rem;
-    padding: 2px ${spacing.xs};
-    cursor: pointer;
-    &:focus { outline: none; border-color: ${colors.accent}; }
-`;
-
-const rowBtnStyle = (visible) => css`
-    opacity: ${visible ? 1 : 0};
-    padding: 2px ${spacing.sm};
-    background: none;
-    border: 1px solid ${colors.border};
-    color: ${colors.textMuted};
-    border-radius: ${radius.sm};
-    cursor: pointer;
-    font-size: 0.75rem;
-    white-space: nowrap;
-    transition: opacity 0.1s;
-    flex-shrink: 0;
-    &:hover { border-color: ${colors.accent}; color: ${colors.textPrimary}; }
-`;
-
-const addRowStyle = css`
-    display: flex;
-    align-items: center;
-    gap: ${spacing.xs};
-    padding: ${spacing.sm};
-    border-top: 1px solid ${colors.border};
-    flex-shrink: 0;
-`;
-
-const nameInputStyle = css`
-    flex: 1;
-    padding: ${spacing.xs} ${spacing.sm};
-    background: ${colors.bgRaised};
-    border: 1px solid ${colors.border};
-    border-radius: ${radius.sm};
-    color: ${colors.textPrimary};
-    font-size: 0.85rem;
-    min-width: 0;
-    &:focus { outline: none; border-color: ${colors.accent}; }
-`;
-
-const addBtnStyle = css`
-    padding: ${spacing.xs} ${spacing.md};
-    background: none;
-    border: 1px solid ${colors.accent};
-    color: ${colors.accent};
-    border-radius: ${radius.md};
-    cursor: pointer;
-    font-size: 0.85rem;
-    flex-shrink: 0;
-    &:hover { background: ${colors.accent}; color: ${colors.textPrimary}; }
-`;
-
-const menuWrapStyle = css`
-    position: relative;
-`;
-
-const dotsStyle = (visible) => css`
-    opacity: ${visible ? 1 : 0};
-    background: none;
-    border: 1px solid ${colors.border};
-    color: ${colors.textMuted};
-    border-radius: ${radius.sm};
-    cursor: pointer;
-    font-size: 0.85rem;
-    padding: 0 ${spacing.xs};
-    line-height: 1.4;
-    transition: opacity 0.1s;
-    flex-shrink: 0;
-    &:hover { border-color: ${colors.accent}; color: ${colors.textPrimary}; }
-`;
-
-const dropdownStyle = css`
-    position: absolute;
-    right: 0;
-    top: calc(100% + 4px);
-    background: ${colors.bgRaised};
-    border: 1px solid ${colors.border};
-    border-radius: ${radius.md};
-    min-width: 140px;
-    z-index: 100;
-    overflow: hidden;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.4);
-`;
-
-const menuItemStyle = css`
-    display: block;
-    width: 100%;
-    text-align: left;
-    padding: ${spacing.sm} ${spacing.md};
-    background: none;
-    border: none;
-    color: ${colors.textPrimary};
-    font-size: 0.85rem;
-    cursor: pointer;
-    &:hover { background: ${colors.bgSurface}; }
-`;
-
-const menuItemDangerStyle = css`
-    ${menuItemStyle};
-    color: ${colors.error};
-`;
-
-const nameEditInputStyle = css`
-    flex: 1;
-    background: ${colors.bgRaised};
-    border: 1px solid ${colors.accent};
-    border-radius: ${radius.sm};
-    color: ${colors.textPrimary};
-    font-size: 0.9rem;
-    padding: 2px ${spacing.xs};
-    min-width: 0;
-    &:focus { outline: none; }
-`;
-
-function TokenRow({ token, onEditImage, onRename, onRemove }) {
-    const [hovered, setHovered] = useState(false);
-    const [menuOpen, setMenuOpen] = useState(false);
-    const [editingName, setEditingName] = useState(false);
-    const [nameValue, setNameValue] = useState(token.name);
-
-    useEffect(() => {
-        if (!menuOpen) return;
-        function handleClick(e) {
-            if (!e.target.closest('[data-menu]')) setMenuOpen(false);
-        }
-        document.addEventListener('mousedown', handleClick);
-        return () => document.removeEventListener('mousedown', handleClick);
-    }, [menuOpen]);
-
-    function commitRename() {
-        const trimmed = nameValue.trim();
-        if (trimmed && trimmed !== token.name) onRename(token, trimmed);
-        setEditingName(false);
-    }
-
-    const meta = [token.power != null && token.toughness != null ? `${token.power}/${token.toughness}` : null, token.colors || null].filter(Boolean).join(' · ');
-
-    return (
-        <div
-            css={rowBaseStyle}
-            style={{ background: hovered ? colors.bgSurface : 'transparent' }}
-            onMouseEnter={() => setHovered(true)}
-            onMouseLeave={() => setHovered(false)}
+  return (
+    <>
+      <div
+        css={cardListCss}
+      >
+        <form
+          css={css`
+            display: flex;
+          `}
+          onSubmit={(e) => { handleSearch(e) }}
         >
-            {editingName ? (
-                <input
-                    css={nameEditInputStyle}
-                    autoFocus
-                    value={nameValue}
-                    onChange={e => setNameValue(e.target.value)}
-                    onBlur={commitRename}
-                    onKeyDown={e => { if (e.key === 'Enter') commitRename(); if (e.key === 'Escape') setEditingName(false); }}
-                />
-            ) : (
-                <span css={rowNameStyle}>
-                    {token.name}
-                </span>
-            )}
-            <div css={menuWrapStyle} data-menu>
-                <button
-                    css={dotsStyle(hovered || menuOpen)}
-                    onClick={() => setMenuOpen(o => !o)}
-                >
-                    ···
-                </button>
-                {menuOpen && (
-                    <div css={dropdownStyle} data-menu>
-                        <button css={menuItemStyle} onClick={() => { setEditingName(true); setMenuOpen(false); }}>
-                            Edit name
-                        </button>
-                        <button css={menuItemStyle} onClick={() => { onEditImage(token); setMenuOpen(false); }}>
-                            Edit image
-                        </button>
-                        <button css={menuItemDangerStyle} onClick={() => { onRemove(token); setMenuOpen(false); }}>
-                            Remove
-                        </button>
-                    </div>
-                )}
-            </div>
-        </div>
-    );
-}
-
-function CardRow({ card, onEditImage, onBoardChange, onRemove, onRename, onAddOne, onRemoveOne }) {
-    const [hovered, setHovered] = useState(false);
-    const [menuOpen, setMenuOpen] = useState(false);
-    const [editingName, setEditingName] = useState(false);
-    const [nameValue, setNameValue] = useState(card.name);
-    const menuRef = useState(null);
-
-    useEffect(() => {
-        if (!menuOpen) return;
-        function handleClick(e) {
-            if (!e.target.closest('[data-menu]')) setMenuOpen(false);
-        }
-        document.addEventListener('mousedown', handleClick);
-        return () => document.removeEventListener('mousedown', handleClick);
-    }, [menuOpen]);
-
-    function commitRename() {
-        const trimmed = nameValue.trim();
-        if (trimmed && trimmed !== card.name) onRename(card, trimmed);
-        setEditingName(false);
-    }
-
-    return (
+          <input placeholder="Search" value={search} onChange={(e) => { setSearch(e.target.value) }} />
+          <button type="submit">Search</button>
+          {loading && <p>Loading...</p>}
+        </form>
         <div
-            css={rowBaseStyle}
-            style={{ background: hovered ? colors.bgSurface : 'transparent' }}
-            onMouseEnter={() => setHovered(true)}
-            onMouseLeave={() => setHovered(false)}
+          css={css`
+            display: flex;
+            flex-direction: column;
+            flex-wrap: wrap;
+            height: 100%;
+            align-content: flex-start;
+          `}
         >
-            {editingName ? (
-                <input
-                    css={nameEditInputStyle}
-                    autoFocus
-                    value={nameValue}
-                    onChange={e => setNameValue(e.target.value)}
-                    onBlur={commitRename}
-                    onKeyDown={e => { if (e.key === 'Enter') commitRename(); if (e.key === 'Escape') setEditingName(false); }}
-                />
-            ) : (
-                <span css={rowNameStyle}>{card.quantity} - {card.name}</span>
-            )}
-            <select
-                css={boardSelectStyle}
-                value={card.board}
-                onChange={e => onBoardChange(card, e.target.value)}
-                onClick={e => e.stopPropagation()}
+          {displayCardList.map(({ category, cards }) => (
+            <div
+              key={category}
+              css={css`
+                width: 200px;
+                margin-top: ${spacing.md};
+                margin-right: ${spacing.sm};
+              `}
             >
-                <option value="main">Main</option>
-                <option value="commander">Commander</option>
-                <option value="sideboard">Sideboard</option>
-            </select>
-            <div css={menuWrapStyle} data-menu>
-                <button
-                    css={dotsStyle(hovered || menuOpen)}
-                    onClick={() => setMenuOpen(o => !o)}
-                >
-                    ···
-                </button>
-                {menuOpen && (
-                    <div css={dropdownStyle} data-menu>
-                        <button css={menuItemStyle} onClick={() => { onAddOne(card); setMenuOpen(false); }}>
-                            + Add one
-                        </button>
-                        <button css={menuItemStyle} onClick={() => { setEditingName(true); setMenuOpen(false); }}>
-                            Edit name
-                        </button>
-                        <button css={menuItemStyle} onClick={() => { onEditImage(card); setMenuOpen(false); }}>
-                            Edit image
-                        </button>
-                        <button css={menuItemDangerStyle} onClick={() => { onRemoveOne(card); setMenuOpen(false); }}>
-                            Remove one
-                        </button>
-                        <button css={menuItemDangerStyle} onClick={() => { onRemove(card); setMenuOpen(false); }}>
-                            Remove
-                        </button>
-                    </div>
-                )}
+              <h3
+                css={css`
+                  border-bottom: 1px solid ${colors.textPrimary};
+                  margin-bottom: ${spacing.xs};
+                `}
+              >
+                {category}
+              </h3>
+              {cards.map(card => (
+                <CardListItem
+                  card={card}
+                  onHover={() => onCardHover(card)}
+                  onMenuSelect={(e) => { setMenu({ card, x: e.clientX, y: e.clientY }); }}
+                  menuOpen={menu?.card.id === card.id}
+                />
+              ))}
             </div>
+          ))}
         </div>
-    );
+      </div>
+      {menu && (
+        <ContextMenu x={menu.x} y={menu.y} onClose={() => setMenu(null)}>
+          <MenuItem onClick={async () => {
+            setCardImages({ loading: true, images: false })
+            const images = await getAllImages(menu.card)
+            setCardImages({ loading: false, images: images })
+          }}>
+            Change Image
+          </MenuItem>
+          {menu.card.type_line.includes('Creature') && menu.card.is_legendary && menu.card.board !== 'commander' && (
+            <MenuItem onClick={async () => {
+              await setCommander(deck.id, menu.card)
+              const newCards = await getCardsForDeck(deck.id)
+              setCards(newCards)
+            }}>
+              Set as Commander
+            </MenuItem>
+          )}
+          <MenuItem onClick={async () => {
+            await insertCard(deck.id, menu.card,)
+            const newCards = await getCardsForDeck(deck.id)
+            setCards(newCards)
+            setMenu(null)
+          }}>
+            Add One
+          </MenuItem>
+          <MenuItem onClick={() => {
+            setAddMoreModal(menu.card)
+            setMenu(null)
+          }}>
+            Add More
+          </MenuItem>
+          {menu.card.quantity > 1 && (
+            <MenuItem onClick={async () => {
+              await removeCard(deck.id, menu.card, 1)
+              const newCards = await getCardsForDeck(deck.id)
+              setCards(newCards)
+              setMenu(null)
+            }} danger>
+              Remove One
+            </MenuItem>
+          )}
+          <MenuItem onClick={async () => {
+            await removeCard(deck.id, menu.card, menu.card.quantity)
+            const newCards = await getCardsForDeck(deck.id)
+            setCards(newCards)
+            setMenu(null)
+          }} danger>
+            Remove
+          </MenuItem>
+        </ContextMenu >
+      )
+      }
+
+      <Modal
+        onClose={() => { setSearchResults(null) }}
+        isOpen={searchResults}
+        size="xl"
+      >
+        <div css={css`
+          max-height: 100%;
+          overflow-y: auto;
+          padding: ${spacing.md};
+        `}
+        >
+          {searchResults &&
+            <SearchResults
+              results={searchResults}
+              addCard={addCard}
+            />
+          }
+        </div>
+      </Modal >
+      <Modal
+        onClose={() => { setAddMoreModal((false)) }}
+        isOpen={addMoreModal}
+        size="sm"
+      >
+        <form
+          css={css`
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+          `}
+          onSubmit={async (e) => {
+            e.preventDefault()
+            await insertCard(deck.id, addMoreModal, addMoreAmount)
+            setAddMoreAmount(3)
+            setAddMoreModal(false)
+            const newCards = await getCardsForDeck(deck.id)
+            setCards(newCards)
+          }}
+        >
+          <h2>Add More</h2>
+          <div
+            css={css`
+              margin-bottom: ${spacing.xxl};
+              display: flex;
+              flex-direction: column;
+              gap: ${spacing.md};
+            `}
+          >
+            <input
+              type="number"
+              value={addMoreAmount}
+              onChange={(e) => setAddMoreAmount(e.target.value)}
+            />
+            <button
+              type="submit"
+              css={css`
+                padding: ${spacing.xs} ${spacing.sm}
+              `}
+            >Add</button>
+          </div>
+        </form>
+      </Modal>
+      <Modal
+        onClose={() => { setCardImages({ loading: false, images: null }) }}
+        isOpen={cardImages.loading || cardImages.images}
+        size="xl"
+      >
+        <div css={css`
+          max-height: 100%;
+          overflow-y: auto;
+          padding: ${spacing.md};
+        `}
+        >
+
+          {cardImages.loading
+            ? "loading" :
+            <SearchResults
+              results={cardImages.images}
+              addCard={async (card) => {
+                const isDoubleFaced = card.card_faces?.length > 0 && card.card_faces[0].image_uris;
+
+                const newUrlFront = isDoubleFaced
+                  ? card.card_faces[0].image_uris.normal
+                  : card.image_uris?.normal ?? null;
+
+                const newUrlBack = isDoubleFaced
+                  ? card.card_faces[1].image_uris.normal
+                  : null;
+
+                await changeCardImage(deck.id, menu.card, newUrlFront, newUrlBack)
+
+                const newCards = await getCardsForDeck(deck.id)
+                setCards(newCards)
+                setCardImages({ loading: false, images: null })
+              }} />
+          }
+        </div>
+      </Modal>
+    </>
+  )
 }
 
-export default function DeckEditor({ deck, onBack }) {
-    const [cards, setCards] = useState([]);
-    const [tokens, setTokens] = useState([]);
-    const [hoveredId, setHoveredId] = useState(null);
-    const [newCardName, setNewCardName] = useState('');
-    const [newTokenName, setNewTokenName] = useState('');
-    const [deckName, setDeckName] = useState(deck.name);
-    const [confirmingDelete, setConfirmingDelete] = useState(false);
-    const [imageModalCard, setImageModalCard] = useState(false);
-
-    useEffect(() => {
-        getCardsForDeck(deck.id).then(setCards);
-        getTokensForDeck(deck.id).then(setTokens);
-    }, [deck.id]);
-
-    const previewCard = cards.find(c => `card:${c.id}` === hoveredId) ?? tokens.find(t => `token:${t.id}` === hoveredId) ?? null;
-
-    async function handleEditImage(card) {
-        setImageModalCard(card);
-    }
-
-    async function handleImageSelect(printing) {
-        const card = imageModalCard;
-        const image_uri = printing.image_uris?.normal ?? printing.card_faces?.[0]?.image_uris?.normal ?? null;
-        const image_uri_back = printing.card_faces?.[1]?.image_uris?.normal ?? null;
-        const db = await getDb();
-        await db.execute(
-            'UPDATE deck_cards SET image_uri = $1, image_uri_back = $2 WHERE id = $3',
-            [image_uri, image_uri_back, card.id]
-        );
-        setCards(prev => prev.map(c => c.id === card.id ? { ...c, image_uri, image_uri_back } : c));
-        setImageModalCard(false);
-    }
-
-    async function handleBoardChange(card, newBoard) {
-        const db = await getDb();
-        await db.execute('UPDATE deck_cards SET board = $1 WHERE id = $2', [newBoard, card.id]);
-        setCards(prev => prev.map(c => c.id === card.id ? { ...c, board: newBoard } : c));
-    }
-
-    async function handleRemove(card) {
-        const db = await getDb();
-        await db.execute('DELETE FROM deck_cards WHERE id = $1', [card.id]);
-        setCards(prev => prev.filter(c => c.id !== card.id));
-    }
-
-    async function handleRename(card, name) {
-        const db = await getDb();
-        await db.execute('UPDATE deck_cards SET name = $1 WHERE id = $2', [name, card.id]);
-        setCards(prev => prev.map(c => c.id === card.id ? { ...c, name } : c));
-    }
-
-    async function handleAddOne(card) {
-        const db = await getDb();
-        const newQty = card.quantity + 1;
-        await db.execute('UPDATE deck_cards SET quantity = $1 WHERE id = $2', [newQty, card.id]);
-        setCards(prev => prev.map(c => c.id === card.id ? { ...c, quantity: newQty } : c));
-    }
-
-    async function handleRemoveOne(card) {
-        const db = await getDb();
-        if (card.quantity === 1) {
-            await db.execute('DELETE FROM deck_cards WHERE id = $1', [card.id]);
-            setCards(prev => prev.filter(c => c.id !== card.id));
-        } else {
-            const newQty = card.quantity - 1;
-            await db.execute('UPDATE deck_cards SET quantity = $1 WHERE id = $2', [newQty, card.id]);
-            setCards(prev => prev.map(c => c.id === card.id ? { ...c, quantity: newQty } : c));
+function MenuItem({ onClick, children, danger = false }) {
+  return (
+    <div
+      onClick={onClick}
+      css={css`
+        padding: ${spacing.xs} ${spacing.sm};
+        cursor: pointer;
+        white-space: nowrap;
+        color: ${danger ? colors.error : colors.textPrimary};
+        &:hover {
+          background-color: ${colors.bgRaised};
         }
-    }
+`}
+    >
+      {children}
+    </div>
+  )
+}
 
-    async function handleEditTokenImage(token) {
-        const url = await pickAndUploadCardImage();
-        if (!url) return;
-        const db = await getDb();
-        await db.execute('UPDATE tokens SET image_uri = $1 WHERE id = $2', [url, token.id]);
-        setTokens(prev => prev.map(t => t.id === token.id ? { ...t, image_uri: url } : t));
-    }
-
-    async function handleRenameToken(token, name) {
-        const db = await getDb();
-        await db.execute('UPDATE tokens SET name = $1 WHERE id = $2', [name, token.id]);
-        setTokens(prev => prev.map(t => t.id === token.id ? { ...t, name } : t));
-    }
-
-    async function handleRemoveToken(token) {
-        const db = await getDb();
-        await db.execute('DELETE FROM tokens WHERE id = $1', [token.id]);
-        setTokens(prev => prev.filter(t => t.id !== token.id));
-    }
-
-    async function handleDeleteDeck() {
-        await deleteDeck(deck.id);
-        onBack();
-    }
-
-    async function handleAddToken() {
-        const name = newTokenName.trim();
-        if (!name) return;
-        const url = await pickAndUploadCardImage();
-        if (!url) return;
-        const db = await getDb();
-        const result = await db.execute(
-            'INSERT INTO tokens (deck_id, name, image_uri) VALUES ($1, $2, $3)',
-            [deck.id, name, url]
-        );
-        setTokens(prev => [...prev, { id: result.lastInsertId, deck_id: deck.id, scryfall_id: null, name, image_uri: url, power: null, toughness: null, colors: null }]);
-        setNewTokenName('');
-    }
-
-    async function handleAddCard() {
-        const name = newCardName.trim();
-        if (!name) return;
-        const url = await pickAndUploadCardImage();
-        if (!url) return;
-
-        const db = await getDb();
-        const result = await db.execute(
-            `INSERT INTO deck_cards (deck_id, scryfall_id, name, quantity, image_uri, board, is_legendary)
-             VALUES ($1, $2, $3, 1, $4, 'main', 0)`,
-            [deck.id, null, name, url]
-        );
-        setCards(prev => [...prev, {
-            id: result.lastInsertId,
-            deck_id: deck.id,
-            scryfall_id: null,
-            name,
-            quantity: 1,
-            image_uri: url,
-            image_uri_back: null,
-            board: 'main',
-            is_legendary: 0,
-        }]);
-        setNewCardName('');
-    }
-
-    return (
-        <>
-        <div css={layoutStyle}>
-            <header css={headerStyle}>
-                <button css={backBtnStyle} onClick={onBack}>← Back</button>
-                <input
-                    css={css`
-                        ${titleStyle};
-                        background: none;
-                        border: none;
-                        border-bottom: 1px solid transparent;
-                        outline: none;
-                        width: 100%;
-                        &:hover { border-bottom-color: ${colors.border}; }
-                        &:focus { border-bottom-color: ${colors.accent}; }
-                    `}
-                    value={deckName}
-                    onChange={e => setDeckName(e.target.value)}
-                    onBlur={async () => {
-                        const name = deckName.trim();
-                        if (!name || name === deck.name) return;
-                        const db = await getDb();
-                        await db.execute('UPDATE decks SET name = $1 WHERE id = $2', [name, deck.id]);
-                        deck.name = name;
-                    }}
-                />
-                {confirmingDelete ? (
-                    <>
-                        <span css={css`font-size:0.8rem; color:${colors.textMuted}; white-space:nowrap;`}>Delete "{deckName}"?</span>
-                        <button css={deleteBtnStyle} onClick={handleDeleteDeck}>Yes, delete</button>
-                        <button css={backBtnStyle} onClick={() => setConfirmingDelete(false)}>Cancel</button>
-                    </>
-                ) : (
-                    <button css={deleteBtnStyle} onClick={() => setConfirmingDelete(true)}>Delete</button>
-                )}
-            </header>
-
-            <div css={bodyStyle}>
-                <div css={listStyle}>
-                    <div css={listScrollStyle}>
-                        {['commander', 'main', 'sideboard'].map(board => {
-                            const section = [...cards]
-                                .filter(c => c.board === board)
-                                .sort((a, b) => a.name.localeCompare(b.name));
-                            if (section.length === 0) return null;
-                            return (
-                                <div key={board}>
-                                    <p css={css`
-                                        font-size: 0.7rem;
-                                        text-transform: uppercase;
-                                        letter-spacing: 0.08em;
-                                        color: ${colors.textMuted};
-                                        padding: ${spacing.sm} ${spacing.sm} ${spacing.xs};
-                                        border-bottom: 1px solid ${colors.border};
-                                        margin-bottom: ${spacing.xs};
-                                    `}>
-                                        {board} ({section.reduce((sum, c) => sum + c.quantity, 0)})
-                                    </p>
-                                    {section.map(card => (
-                                        <div
-                                            key={card.id}
-                                            onMouseEnter={() => setHoveredId(`card:${card.id}`)}
-                                            onMouseLeave={() => setHoveredId(null)}
-                                        >
-                                            <CardRow
-                                                card={card}
-                                                onEditImage={handleEditImage}
-                                                onBoardChange={handleBoardChange}
-                                                onRemove={handleRemove}
-                                                onRename={handleRename}
-                                                onAddOne={handleAddOne}
-                                                onRemoveOne={handleRemoveOne}
-                                            />
-                                        </div>
-                                    ))}
-                                </div>
-                            );
-                        })}
-                        <div>
-                            <p css={css`
-                                font-size: 0.7rem;
-                                text-transform: uppercase;
-                                letter-spacing: 0.08em;
-                                color: ${colors.textMuted};
-                                padding: ${spacing.sm} ${spacing.sm} ${spacing.xs};
-                                border-bottom: 1px solid ${colors.border};
-                                margin-bottom: ${spacing.xs};
-                            `}>
-                                tokens ({tokens.length})
-                            </p>
-                            {[...tokens].sort((a, b) => a.name.localeCompare(b.name)).map(token => (
-                                <div
-                                    key={token.id}
-                                    onMouseEnter={() => setHoveredId(`token:${token.id}`)}
-                                    onMouseLeave={() => setHoveredId(null)}
-                                >
-                                    <TokenRow
-                                        token={token}
-                                        onEditImage={handleEditTokenImage}
-                                        onRename={handleRenameToken}
-                                        onRemove={handleRemoveToken}
-                                    />
-                                </div>
-                            ))}
-                            <div css={addRowStyle}>
-                                <input
-                                    css={nameInputStyle}
-                                    type="text"
-                                    placeholder="New token name…"
-                                    value={newTokenName}
-                                    onChange={e => setNewTokenName(e.target.value)}
-                                    onKeyDown={e => e.key === 'Enter' && handleAddToken()}
-                                />
-                                <button css={addBtnStyle} onClick={handleAddToken}>+ Add</button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div css={addRowStyle}>
-                        <input
-                            css={nameInputStyle}
-                            type="text"
-                            placeholder="New card name…"
-                            value={newCardName}
-                            onChange={e => setNewCardName(e.target.value)}
-                            onKeyDown={e => e.key === 'Enter' && handleAddCard()}
-                        />
-                        <button css={addBtnStyle} onClick={handleAddCard}>+ Add</button>
-                    </div>
-                </div>
-
-                <div css={previewPaneStyle}>
-                    <AnimatePresence mode="wait">
-                        {previewCard ? (
-                            <motion.img
-                                key={hoveredId}
-                                css={previewImgStyle}
-                                src={previewCard.image_uri}
-                                alt={previewCard.name}
-                                initial={{ opacity: 0, scale: 0.95 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                exit={{ opacity: 0, scale: 0.95 }}
-                                transition={{ duration: 0.15 }}
-                            />
-                        ) : (
-                            <motion.p
-                                key="placeholder"
-                                css={placeholderStyle}
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                exit={{ opacity: 0 }}
-                            >
-                                Hover a card to preview
-                            </motion.p>
-                        )}
-                    </AnimatePresence>
-                </div>
+function SearchResults({ results, addCard }) {
+  return (
+    <>
+      {results.map(card => {
+        const imageUrl = card.image_uris?.normal ?? card.card_faces?.[0]?.image_uris?.normal
+        return (
+          <div
+            key={card.id}
+            css={css`
+              position: relative;
+              display: inline-block;
+              width: 200px;
+              aspect-ratio: 2.5/3.5;
+              overflow: hidden;
+              margin: ${spacing.md};
+              &:hover .card-overlay {
+                opacity: 1;
+              }
+            `}
+          >
+            <img
+              css={css`
+                border-radius: ${radius.md};
+                width: 100%;
+              `}
+              src={imageUrl}
+              alt={card.name}
+              loading="lazy"
+            />
+            <div
+              className="card-overlay"
+              onClick={() => addCard(card)}
+              css={css`
+                position: absolute;
+                inset: 0;
+                background: rgba(0, 0, 0, 0.6);
+                border-radius: ${radius.md};
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                opacity: 0;
+                transition: opacity 0.15s ease;
+                cursor: pointer;
+                font-size: 2rem;
+                color: white;
+              `}
+            >
+              +
             </div>
+          </div>
+        )
+      })}
+    </>
+  )
+}
+
+function CardListItem({ card, onHover, onMenuSelect, menuOpen }) {
+  return (
+    <div
+      css={css`
+        display: flex;
+        flex-wrap: nowrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: ${spacing.xs};
+        min-height: 30px;
+        &:hover .menu {
+          opacity: 100%;
+          pointer-events: auto;
+        }
+      `}
+      onMouseEnter={onHover}
+    >
+      <p>{card.quantity} {card.name}</p>
+      <div
+        className="menu"
+        css={css`
+          opacity: ${menuOpen ? "100%" : "0"};
+          transition: opacity 0.1s ease-in-out;
+          cursor: pointer;
+          pointer-events: none;
+          background-color: ${colors.bgRaised};
+          aspect-ratio: 1/1;
+          width: 28px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: ${radius.sm};
+          padding: 0;
+          line-height: 1;
+          font-size: 1.2rem;
+          span {
+            transform: translateY(1px);
+            font-weight: bold;
+          }
+        `}
+        onClick={(e) => onMenuSelect(e)}
+      >
+        <span>⋮</span>
+      </div>
+    </div>
+  )
+}
+
+function ContextMenu({ x, y, onClose, children }) {
+  const menuRef = useRef()
+  const [position, setPosition] = useState({ top: y, left: x, ready: null })
+
+  useLayoutEffect(() => {
+    const el = menuRef.current
+    if (!el) return
+
+    const { offsetWidth, offsetHeight } = el
+    const padding = 8
+
+    let left = x
+    let top = y
+
+    if (left + offsetWidth > window.innerWidth - padding) {
+      left = window.innerWidth - offsetWidth - padding
+    }
+    if (top + offsetHeight > window.innerHeight - padding) {
+      top = window.innerHeight - offsetHeight - padding
+    }
+
+    left = Math.max(padding, left)
+    top = Math.max(padding, top)
+
+    setPosition({ top, left, ready: true })
+  }, [x, y])
+  return (
+    <>
+      <div
+        onClick={onClose}
+        css={css`
+          inset: 0;
+          position: fixed;
+          z-index: 999;
+        `}
+      />
+      <div
+        ref={menuRef}
+        css={css`
+          position: fixed;
+          top: ${position.top}px;
+          left: ${position.left}px;
+          background: ${colors.bgSurface};
+          border-radius: ${radius.sm};
+          box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+          z-index: 1000;
+          min-width: 140px;
+          overflow: hidden;
+          visibility: ${position.ready ? 'visible' : 'hidden'};
+        `}
+      >
+        {children}
+      </div>
+    </>
+  )
+}
+
+function HoverCardImage({ card }) {
+  return (
+    <div
+      css={css`
+        width: 100%;
+        height: 100%;
+        background-color: ${colors.bgBase};
+        display: flex;
+        padding-top: ${spacing.xxl};
+        align-items: flex-start;
+        justify-content: center;
+      `}
+    >
+      {card &&
+        <div
+          css={css`
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            gap: ${spacing.sm};
+          `}
+        >
+          <img
+            src={card.image_uri
+            }
+            alt={card.name}
+            css={css`
+                width: 200px;
+                aspect-ratio: 2.5/3.5;
+                border-radius: ${radius.lg};
+              `}
+          />
+          <p>{card.name}</p>
         </div>
-        {imageModalCard && <ImageSelector card={imageModalCard} onClose={() => setImageModalCard(false)} onSelect={handleImageSelect} />}
-        </>
-    );
+      }
+    </div>
+  )
 }

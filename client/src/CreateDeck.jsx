@@ -8,35 +8,35 @@ import { colors, spacing, radius } from '@mtg/shared';
 const regex = /^(\d+)\s+(.+?)\s+\(([A-Za-z0-9]+)\)\s+(\d+).*/;
 
 function parseDecklist(text) {
-    return text
-        .split('\n')
-        .map(line => line.trim())
-        .filter(line => line.length > 0)
-        .map(line => {
-            const match = line.match(regex);
-            if (!match) return null;
-            return {
-                quantity:  parseInt(match[1]),
-                name:      match[2],
-                setCode:   match[3],
-                setNumber: match[4],
-            };
-        })
-        .filter(Boolean);
+  return text
+    .split('\n')
+    .map(line => line.trim())
+    .filter(line => line.length > 0)
+    .map(line => {
+      const match = line.match(regex);
+      if (!match) return null;
+      return {
+        quantity: parseInt(match[1]),
+        name: match[2],
+        setCode: match[3],
+        setNumber: match[4],
+      };
+    })
+    .filter(Boolean);
 }
 
 async function saveDeck(deckName, format, cards, tokens, commanderScryfallId) {
-    const result = await createDeck(deckName, format);
-    const deckId = result.lastInsertId;
+  const result = await createDeck(deckName, format);
+  const deckId = result.lastInsertId;
 
-    for (const card of cards) {
-        const board = card.scryfall_id === commanderScryfallId ? 'commander' : card.board;
-        await insertCard(deckId, { ...card, board });
-    }
+  for (const card of cards) {
+    const board = card.scryfall_id === commanderScryfallId ? 'commander' : card.board;
+    await insertCard(deckId, { ...card, board });
+  }
 
-    for (const token of tokens) {
-        await insertToken(deckId, token);
-    }
+  for (const token of tokens) {
+    await insertToken(deckId, token);
+  }
 }
 
 // ---- styles ----
@@ -194,147 +194,101 @@ const confirmBtnStyle = css`
 `;
 
 const overlayVariants = {
-    hidden:  { opacity: 0 },
-    visible: { opacity: 1, transition: { duration: 0.2, when: 'beforeChildren' } },
-    exit:    { opacity: 0, transition: { duration: 0.15, when: 'afterChildren' } },
+  hidden: { opacity: 0 },
+  visible: { opacity: 1, transition: { duration: 0.2, when: 'beforeChildren' } },
+  exit: { opacity: 0, transition: { duration: 0.15, when: 'afterChildren' } },
 };
 
 const contentVariants = {
-    hidden:  { opacity: 0, y: 24 },
-    visible: { opacity: 1, y: 0, transition: { type: 'spring', bounce: 0.3, duration: 0.4 } },
-    exit:    { opacity: 0, y: 16, transition: { duration: 0.15 } },
+  hidden: { opacity: 0, y: 24 },
+  visible: { opacity: 1, y: 0, transition: { type: 'spring', bounce: 0.3, duration: 0.4 } },
+  exit: { opacity: 0, y: 16, transition: { duration: 0.15 } },
 };
 
 function CommanderPicker({ legendaries, onConfirm }) {
-    const [selected, setSelected] = useState(null);
+  const [selected, setSelected] = useState(null);
 
-    return (
-        <AnimatePresence>
-            <motion.div
-                css={pickerOverlayStyle}
-                variants={overlayVariants}
-                initial="hidden"
-                animate="visible"
-                exit="exit"
-            >
-                <motion.div css={pickerPanelStyle} variants={contentVariants}>
-                    <p css={pickerHeadingStyle}>Select your Commander</p>
-                    <div css={pickerGridStyle}>
-                        {legendaries.map(card => (
-                            <div key={card.scryfall_id} css={pickerCardStyle}>
-                                <button
-                                    type="button"
-                                    css={cardButtonStyle(selected?.scryfall_id === card.scryfall_id)}
-                                    onClick={() => setSelected(card)}
-                                >
-                                    <img css={cardImgStyle} src={card.image_uri} alt={card.name} />
-                                </button>
-                            </div>
-                        ))}
-                    </div>
-                    <button
-                        css={confirmBtnStyle}
-                        disabled={!selected}
-                        onClick={() => onConfirm(selected)}
-                    >
-                        Confirm
-                    </button>
-                </motion.div>
-            </motion.div>
-        </AnimatePresence>
-    );
+  return (
+    <AnimatePresence>
+      <motion.div
+        css={pickerOverlayStyle}
+        variants={overlayVariants}
+        initial="hidden"
+        animate="visible"
+        exit="exit"
+      >
+        <motion.div css={pickerPanelStyle} variants={contentVariants}>
+          <p css={pickerHeadingStyle}>Select your Commander</p>
+          <div css={pickerGridStyle}>
+            {legendaries.map(card => (
+              <div key={card.scryfall_id} css={pickerCardStyle}>
+                <button
+                  type="button"
+                  css={cardButtonStyle(selected?.scryfall_id === card.scryfall_id)}
+                  onClick={() => setSelected(card)}
+                >
+                  <img css={cardImgStyle} src={card.image_uri} alt={card.name} />
+                </button>
+              </div>
+            ))}
+          </div>
+          <button
+            css={confirmBtnStyle}
+            disabled={!selected}
+            onClick={() => onConfirm(selected)}
+          >
+            Confirm
+          </button>
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
+  );
 }
 
 // ---- main component ----
 
 export default function CreateDeck({ onClose }) {
-    const [legendaries, setLegendaries] = useState(null);
-    const [pendingData, setPendingData] = useState(null);
-    const [status, setStatus] = useState(null);
+  const [legendaries, setLegendaries] = useState(null);
+  const [pendingData, setPendingData] = useState(null);
+  const [status, setStatus] = useState(null);
 
-    async function formSubmit(e) {
-        e.preventDefault();
-        const formData = new FormData(e.target);
-        const deckName = formData.get('deckName');
-        const format   = formData.get('format');
-        const decklist = formData.get('decklist');
-        const parsed   = parseDecklist(decklist);
+  async function formSubmit(e) {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    const deckName = formData.get('deckName');
 
-        setStatus('Fetching cards from Scryfall…');
-        const { cards, tokens, notFound } = await resolveCollection(parsed);
+    createDeck(deckName);
+  }
 
-        if (notFound.length > 0) {
-            console.warn('Cards not found:', notFound);
-        }
-
-        if (format === 'commander') {
-            setStatus(null);
-            const legendaryCards = cards.filter(c => c.is_legendary);
-            setPendingData({ deckName, format, cards, tokens });
-            setLegendaries(legendaryCards);
-        } else {
-            setStatus('Saving deck…');
-            await saveDeck(deckName, format, cards, tokens, null);
-            setStatus(null);
-            onClose();
-        }
-    }
-
-    async function handleCommanderConfirm(commander) {
-        setStatus('Saving deck…');
-        await saveDeck(
-            pendingData.deckName,
-            pendingData.format,
-            pendingData.cards,
-            pendingData.tokens,
-            commander.scryfall_id
-        );
-        setStatus(null);
-        setLegendaries(null);
-        setPendingData(null);
-        onClose();
-    }
-
-    return (
-        <>
-            <form css={formStyle} onSubmit={formSubmit}>
-                <p css={headingStyle}>Import New Deck</p>
-
-                <div css={fieldStyle}>
-                    <label css={labelStyle} htmlFor="deckName">Deck Name</label>
-                    <input css={inputStyle} type="text" id="deckName" name="deckName" placeholder="My Commander Deck" required />
-                </div>
-
-                <div css={fieldStyle}>
-                    <label css={labelStyle} htmlFor="format">Format</label>
-                    <select css={selectStyle} name="format" id="format">
-                        <option value="commander">Commander</option>
-                    </select>
-                </div>
-
-                <div css={fieldStyle}>
-                    <label css={labelStyle} htmlFor="decklist">Decklist</label>
-                    <textarea
-                        css={textareaStyle}
-                        id="decklist"
-                        name="decklist"
-                        placeholder={`Paste your decklist here\nExample: 4 Island (THB) 251`}
-                        required
-                    />
-                </div>
-
-                <div css={footerStyle}>
-                    {status && <span css={savingStyle}>{status}</span>}
-                    <button css={submitBtnStyle} type="submit" disabled={!!status}>Import</button>
-                </div>
-            </form>
-
-            {legendaries && (
-                <CommanderPicker
-                    legendaries={legendaries}
-                    onConfirm={handleCommanderConfirm}
-                />
-            )}
-        </>
+  async function handleCommanderConfirm(commander) {
+    setStatus('Saving deck…');
+    await saveDeck(
+      pendingData.deckName,
+      pendingData.format,
+      pendingData.cards,
+      pendingData.tokens,
+      commander.scryfall_id
     );
+    setStatus(null);
+    setLegendaries(null);
+    setPendingData(null);
+    onClose();
+  }
+
+  return (
+    <>
+      <form css={formStyle} onSubmit={formSubmit}>
+        <p css={headingStyle}>Create New Deck</p>
+
+        <div css={fieldStyle}>
+          <label css={labelStyle} htmlFor="deckName">Deck Name</label>
+          <input css={inputStyle} type="text" id="deckName" name="deckName" placeholder="My Commander Deck" required />
+        </div>
+        <div css={footerStyle}>
+          {status && <span css={savingStyle}>{status}</span>}
+          <button css={submitBtnStyle} type="submit" disabled={!!status}>Import</button>
+        </div>
+      </form>
+    </>
+  );
 }
