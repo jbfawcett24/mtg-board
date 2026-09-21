@@ -23,13 +23,6 @@ TODO - Board
 - [ ] Have cards face down
 - [ ] Move cards straight to zones from hand
 - [ ] look at top x of library in hand
-- [ ] Format selector on import deck looks bad
-- [ ] Fails to import decks sometimes
-- [ ] Improve deck editor (just copy moxfield)
+- [ ] Improve deck editor (just copy moxfield) - WIP - need tokens
 - [ ] Dungeons not appearing in tokens
-- [ ] Scaling issues
 
-TODO - Deck editor
-- [x] change card image from scryfall
-- [ ] custom card upload
-- [ ] card upload url not being local IP

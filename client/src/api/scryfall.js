@@ -131,9 +131,10 @@ export async function resolveCollection(parsedCards) {
   return { cards, tokens: tokensWithImages, notFound: allNotFound };
 }
 
-export async function scryfallSearch(query, format) {
+export async function scryfallSearch(query, format, colors) {
   const baseUrl = 'https://api.scryfall.com/cards/search'
-  const q = `${query} f:${format}`
+  const q = `${query} f:${format} id<=${colors}`
+  console.log(colors)
   const params = new URLSearchParams({ q })
   const url = `${baseUrl}?${params.toString()}`
   console.log(url)

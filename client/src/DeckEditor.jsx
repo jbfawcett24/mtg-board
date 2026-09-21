@@ -1,5 +1,5 @@
 import { useState, useEffect, useLayoutEffect, useRef } from "react"
-import { changeCardImage, deleteDeck, getCardsForDeck, getDb, insertCard, removeCard, setCommander } from "./db.js"
+import { changeCardImage, deleteDeck, getCardsForDeck, getDb, insertCard, removeCard, setCommander, getDeck } from "./db.js"
 import { css } from "@emotion/react"
 import { colors, spacing, radius } from "@mtg/shared"
 import Modal from "./Modal.jsx"
@@ -269,7 +269,7 @@ function CardList({ deck, onCardHover }) {
     setLoading((true))
     e.preventDefault()
     if (!search.trim()) return;
-    const data = await scryfallSearch(search, deck.format)
+    const data = await scryfallSearch(search, deck.format, deck.color_identity)
     setSearchResults(data.data)
     setLoading(false)
   }
@@ -296,32 +296,50 @@ function CardList({ deck, onCardHover }) {
       <div
         css={cardListCss}
       >
-        <form
-          css={css`
-            display: flex;
-          `}
-          onSubmit={(e) => { handleSearch(e) }}
-        >
-          <input placeholder="Search" value={search} onChange={(e) => { setSearch(e.target.value) }} />
-          <button type="submit">Search</button>
-          {loading && <p>Loading...</p>}
-        </form>
         <div
           css={css`
-            display: flex;
-            flex-direction: column;
-            flex-wrap: wrap;
-            height: 100%;
-            align-content: flex-start;
+            display:flex;
+            justify-content: flex-end;
+            gap: ${spacing.sm};
           `}
         >
+          {loading && <p>Loading...</p>}
+          <form
+            css={css`
+            display: flex;
+            width: 40%;
+          `}
+            onSubmit={(e) => { handleSearch(e) }}
+          >
+            <input
+              css={css`
+                height: 30px;
+                width: 100%;
+              `}
+              placeholder="Search"
+              value={search}
+              onChange={(e) => { setSearch(e.target.value) }}
+            />
+            <button type="submit">Search</button>
+          </form>
+        </div>
+        <div
+          css={css`
+            columns: 200px;
+            column-gap: ${spacing.sm};
+            height: 100%;
+            overflow-x: auto;
+            margin-top: ${spacing.md}
+          `}
+        >
+          <h2>Total Cards - {cards.reduce((acc, card) => acc + card.quantity, 0)}</h2>
           {displayCardList.map(({ category, cards }) => (
             <div
               key={category}
               css={css`
                 width: 200px;
                 margin-top: ${spacing.md};
-                margin-right: ${spacing.sm};
+                break-inside: avoid-column;
               `}
             >
               <h3
@@ -330,9 +348,9 @@ function CardList({ deck, onCardHover }) {
                   margin-bottom: ${spacing.xs};
                 `}
               >
-                {category}
+                {category} - {cards.reduce((acc, card) => acc + card.quantity, 0)}
               </h3>
-              {cards.map(card => (
+              {cards.sort((a, b) => a.name.localeCompare(b.name)).map(card => (
                 <CardListItem
                   card={card}
                   onHover={() => onCardHover(card)}
@@ -356,6 +374,8 @@ function CardList({ deck, onCardHover }) {
           {menu.card.type_line.includes('Creature') && menu.card.is_legendary && menu.card.board !== 'commander' && (
             <MenuItem onClick={async () => {
               await setCommander(deck.id, menu.card)
+              const updatedDeck = await getDeck(deck.id)
+              deck.color_identity = updatedDeck.color_identity
               const newCards = await getCardsForDeck(deck.id)
               setCards(newCards)
             }}>
@@ -413,6 +433,8 @@ function CardList({ deck, onCardHover }) {
             <SearchResults
               results={searchResults}
               addCard={addCard}
+              showCardNumber={true}
+              deckCards={cards}
             />
           }
         </div>
@@ -520,11 +542,13 @@ function MenuItem({ onClick, children, danger = false }) {
   )
 }
 
-function SearchResults({ results, addCard }) {
+function SearchResults({ results, addCard, showCardNumber = false, deckCards }) {
   return (
     <>
       {results.map(card => {
         const imageUrl = card.image_uris?.normal ?? card.card_faces?.[0]?.image_uris?.normal
+        const deckCard = deckCards?.find(dc => dc.scryfall_id === card.id)
+
         return (
           <div
             key={card.id}
@@ -549,6 +573,24 @@ function SearchResults({ results, addCard }) {
               alt={card.name}
               loading="lazy"
             />
+            {showCardNumber && deckCard?.quantity != null && (
+              <div
+                css={css`
+                  position: absolute;
+                  top: ${spacing.xs};
+                  right: ${spacing.xs};
+                  background: rgba(0, 0, 0, 0.75);
+                  color: white;
+                  font-size: 0.85rem;
+                  font-weight: bold;
+                  padding: 2px 8px;
+                  border-radius: ${radius.sm};
+                  line-height: 1.4;
+                `}
+              >
+                {deckCard.quantity}
+              </div>
+            )}
             <div
               className="card-overlay"
               onClick={() => addCard(card)}

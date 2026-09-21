@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { colors, spacing, radius } from '@mtg/shared';
 
 const LONG_PRESS_MS = 500;
-const CARD_W = 160;
+const CARD_W = 120;
 const CARD_H = CARD_W * 1.4;
 
 // ---- styles ----
@@ -205,164 +205,164 @@ const counterAddBtnStyle = css`
 // ---- CounterModal ----
 
 function CounterModal({ card, counters, onAdd, onClose }) {
-    const [oneOne, setOneOne] = useState(0);
-    const [generic, setGeneric] = useState(0);
+  const [oneOne, setOneOne] = useState(0);
+  const [generic, setGeneric] = useState(0);
 
-    return (
-        <motion.div
-            css={counterModalOverlayStyle}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.15 }}
-            onClick={onClose}
-        >
-            <motion.div
-                css={counterModalBoxStyle}
-                initial={{ scale: 0.9 }}
-                animate={{ scale: 1 }}
-                exit={{ scale: 0.9 }}
-                transition={{ type: 'spring', bounce: 0.2, duration: 0.2 }}
-                onClick={e => e.stopPropagation()}
-            >
-                <span css={css`color: ${colors.textPrimary}; font-weight: bold;`}>{card.name}</span>
+  return (
+    <motion.div
+      css={counterModalOverlayStyle}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.15 }}
+      onClick={onClose}
+    >
+      <motion.div
+        css={counterModalBoxStyle}
+        initial={{ scale: 0.9 }}
+        animate={{ scale: 1 }}
+        exit={{ scale: 0.9 }}
+        transition={{ type: 'spring', bounce: 0.2, duration: 0.2 }}
+        onClick={e => e.stopPropagation()}
+      >
+        <span css={css`color: ${colors.textPrimary}; font-weight: bold;`}>{card.name}</span>
 
-                <div css={counterRowStyle}>
-                    <span css={css`color: ${colors.textMuted}; font-size: 0.9rem;`}>+1/+1 counters ({counters.oneOne})</span>
-                    <div css={css`display: flex; align-items: center; gap: ${spacing.sm};`}>
-                        <button css={counterStepBtnStyle} onClick={() => setOneOne(v => Math.max(-(counters.oneOne), v - 1))}>−</button>
-                        <span css={css`color: ${colors.textPrimary}; min-width: 24px; text-align: center;`}>{oneOne > 0 ? `+${oneOne}` : oneOne}</span>
-                        <button css={counterStepBtnStyle} onClick={() => setOneOne(v => v + 1)}>+</button>
-                    </div>
-                </div>
+        <div css={counterRowStyle}>
+          <span css={css`color: ${colors.textMuted}; font-size: 0.9rem;`}>+1/+1 counters ({counters.oneOne})</span>
+          <div css={css`display: flex; align-items: center; gap: ${spacing.sm};`}>
+            <button css={counterStepBtnStyle} onClick={() => setOneOne(v => Math.max(-(counters.oneOne), v - 1))}>−</button>
+            <span css={css`color: ${colors.textPrimary}; min-width: 24px; text-align: center;`}>{oneOne > 0 ? `+${oneOne}` : oneOne}</span>
+            <button css={counterStepBtnStyle} onClick={() => setOneOne(v => v + 1)}>+</button>
+          </div>
+        </div>
 
-                <div css={counterRowStyle}>
-                    <span css={css`color: ${colors.textMuted}; font-size: 0.9rem;`}>Generic counters ({counters.generic})</span>
-                    <div css={css`display: flex; align-items: center; gap: ${spacing.sm};`}>
-                        <button css={counterStepBtnStyle} onClick={() => setGeneric(v => Math.max(-(counters.generic), v - 1))}>−</button>
-                        <span css={css`color: ${colors.textPrimary}; min-width: 24px; text-align: center;`}>{generic > 0 ? `+${generic}` : generic}</span>
-                        <button css={counterStepBtnStyle} onClick={() => setGeneric(v => v + 1)}>+</button>
-                    </div>
-                </div>
+        <div css={counterRowStyle}>
+          <span css={css`color: ${colors.textMuted}; font-size: 0.9rem;`}>Generic counters ({counters.generic})</span>
+          <div css={css`display: flex; align-items: center; gap: ${spacing.sm};`}>
+            <button css={counterStepBtnStyle} onClick={() => setGeneric(v => Math.max(-(counters.generic), v - 1))}>−</button>
+            <span css={css`color: ${colors.textPrimary}; min-width: 24px; text-align: center;`}>{generic > 0 ? `+${generic}` : generic}</span>
+            <button css={counterStepBtnStyle} onClick={() => setGeneric(v => v + 1)}>+</button>
+          </div>
+        </div>
 
-                <button css={counterAddBtnStyle} onClick={() => { onAdd(card.instanceId, oneOne, generic); onClose(); }}>
-                    Apply
-                </button>
-            </motion.div>
-        </motion.div>
-    );
+        <button css={counterAddBtnStyle} onClick={() => { onAdd(card.instanceId, oneOne, generic); onClose(); }}>
+          Apply
+        </button>
+      </motion.div>
+    </motion.div>
+  );
 }
 
 // ---- BattlefieldCard ----
 
 function BattlefieldCard({ card, onTap, onContextMenu, getDropZone, onMove, battlefieldRef, zIndex, onFocus, oneOneCounters, genericCounters, contextOptions }) {
-    const timerRef = useRef(null);
-    const didLongPress = useRef(false);
-    const dragRef = useRef(null);
-    const [pos, setPos] = useState(card.position ?? { x: 100, y: 100 });
-    const [dragging, setDragging] = useState(false);
-    const [showBack, setShowBack] = useState(false);
+  const timerRef = useRef(null);
+  const didLongPress = useRef(false);
+  const dragRef = useRef(null);
+  const [pos, setPos] = useState(card.position ?? { x: 100, y: 100 });
+  const [dragging, setDragging] = useState(false);
+  const [showBack, setShowBack] = useState(false);
 
-    function onPointerDown(e) {
-        e.preventDefault();
-        e.currentTarget.setPointerCapture(e.pointerId);
-        didLongPress.current = false;
-        const startX = e.clientX - pos.x;
-        const startY = e.clientY - pos.y;
-        dragRef.current = { startX, startY, moved: false };
+  function onPointerDown(e) {
+    e.preventDefault();
+    e.currentTarget.setPointerCapture(e.pointerId);
+    didLongPress.current = false;
+    const startX = e.clientX - pos.x;
+    const startY = e.clientY - pos.y;
+    dragRef.current = { startX, startY, moved: false };
 
-        timerRef.current = setTimeout(() => {
-            timerRef.current = null;
-            didLongPress.current = true;
-            onContextMenu(card, e.clientX, e.clientY, setShowBack, showBack);
-        }, LONG_PRESS_MS);
+    timerRef.current = setTimeout(() => {
+      timerRef.current = null;
+      didLongPress.current = true;
+      onContextMenu(card, e.clientX, e.clientY, setShowBack, showBack);
+    }, LONG_PRESS_MS);
+  }
+
+  function onPointerMove(e) {
+    if (!dragRef.current) return;
+    const dx = e.clientX - dragRef.current.startX;
+    const dy = e.clientY - dragRef.current.startY;
+    if (!dragRef.current.moved && (Math.abs(dx - pos.x) > 4 || Math.abs(dy - pos.y) > 4)) {
+      dragRef.current.moved = true;
+      setDragging(true);
+      onFocus(card.instanceId);
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+        timerRef.current = null;
+      }
+    }
+    if (dragRef.current.moved) {
+      setPos({ x: dx, y: dy });
+    }
+  }
+
+  function onPointerUp(e) {
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+    if (!dragRef.current?.moved && !didLongPress.current) {
+      onTap(card);
+    }
+    const wasDragged = dragRef.current?.moved;
+    dragRef.current = null;
+    setDragging(false);
+
+    if (wasDragged) {
+      const zone = getDropZone(e.clientX, e.clientY);
+      if (zone) {
+        onMove(card.instanceId, zone);
+        return;
+      }
     }
 
-    function onPointerMove(e) {
-        if (!dragRef.current) return;
-        const dx = e.clientX - dragRef.current.startX;
-        const dy = e.clientY - dragRef.current.startY;
-        if (!dragRef.current.moved && (Math.abs(dx - pos.x) > 4 || Math.abs(dy - pos.y) > 4)) {
-            dragRef.current.moved = true;
-            setDragging(true);
-            onFocus(card.instanceId);
-            if (timerRef.current) {
-                clearTimeout(timerRef.current);
-                timerRef.current = null;
-            }
-        }
-        if (dragRef.current.moved) {
-            setPos({ x:dx, y: dy });
-        }
-    }
+    const GRID = 20;
+    const bf = battlefieldRef.current;
+    const maxX = bf ? bf.clientWidth - CARD_W : Infinity;
+    const maxY = bf ? bf.clientHeight - CARD_H : Infinity;
+    setPos(prev => ({
+      x: Math.min(maxX, Math.max(0, Math.round(prev.x / GRID) * GRID)),
+      y: Math.min(maxY, Math.max(0, Math.round(prev.y / GRID) * GRID)),
+    }));
+  }
 
-    function onPointerUp(e) {
-        if (timerRef.current) {
-            clearTimeout(timerRef.current);
-            timerRef.current = null;
-        }
-        if (!dragRef.current?.moved && !didLongPress.current) {
-            onTap(card);
-        }
-        const wasDragged = dragRef.current?.moved;
-        dragRef.current = null;
-        setDragging(false);
+  function onPointerCancel() {
+    if (timerRef.current) { clearTimeout(timerRef.current); timerRef.current = null; }
+    dragRef.current = null;
+  }
 
-        if (wasDragged) {
-            const zone = getDropZone(e.clientX, e.clientY);
-            if (zone) {
-                onMove(card.instanceId, zone);
-                return;
-            }
-        }
-
-        const GRID = 20;
-        const bf = battlefieldRef.current;
-        const maxX = bf ? bf.clientWidth - CARD_W : Infinity;
-        const maxY = bf ? bf.clientHeight - CARD_H : Infinity;
-        setPos(prev => ({
-            x: Math.min(maxX, Math.max(0, Math.round(prev.x / GRID) * GRID)),
-            y: Math.min(maxY, Math.max(0, Math.round(prev.y / GRID) * GRID)),
-        }));
-    }
-
-    function onPointerCancel() {
-        if (timerRef.current) { clearTimeout(timerRef.current); timerRef.current = null; }
-        dragRef.current = null;
-    }
-
-    return (
-        <motion.div
-            initial={{ opacity: 0.9, scale: 1.2 }}
-            animate={{ opacity: 1, scale: dragging ? 1.05 : 1, rotate: card.tapped ? 90 : 0 }}
-            exit={{ opacity: 0, scale: 0.7 }}
-            transition={{ type: 'spring', bounce: 0.3, duration: 0.3 }}
-            style={{
-                position: 'absolute',
-                left: pos.x,
-                top: pos.y,
-                width: CARD_W,
-                height: CARD_H,
-                cursor: dragging ? 'grabbing' : 'grab',
-                touchAction: 'none',
-                zIndex: dragging ? zIndex + 100 : zIndex,
-            }}
-            onPointerDown={onPointerDown}
-            onPointerMove={onPointerMove}
-            onPointerUp={onPointerUp}
-            onPointerCancel={onPointerCancel}
-            onContextMenu={e => { e.preventDefault(); onContextMenu(card, e.clientX, e.clientY, setShowBack, showBack); }}
-        >
-            <img
-                src={showBack ? card.image_uri_back : card.image_uri}
-                alt={card.name}
-                css={cardImgStyle}
-                draggable={false}
-            />
-            {oneOneCounters > 0 && <span css={[counterStyle, { bottom: spacing.xs, left: spacing.xs }]}>+{oneOneCounters}/+{oneOneCounters}</span>}
-            {genericCounters > 0 && <span css={[counterStyle, { bottom: '50%', right: '50%', transform: 'translate(50%, 50%)' }]}>{genericCounters}</span>}
-        </motion.div>
-    );
+  return (
+    <motion.div
+      initial={{ opacity: 0.9, scale: 1.2 }}
+      animate={{ opacity: 1, scale: dragging ? 1.05 : 1, rotate: card.tapped ? 90 : 0 }}
+      exit={{ opacity: 0, scale: 0.7 }}
+      transition={{ type: 'spring', bounce: 0.3, duration: 0.3 }}
+      style={{
+        position: 'absolute',
+        left: pos.x,
+        top: pos.y,
+        width: CARD_W,
+        height: CARD_H,
+        cursor: dragging ? 'grabbing' : 'grab',
+        touchAction: 'none',
+        zIndex: dragging ? zIndex + 100 : zIndex,
+      }}
+      onPointerDown={onPointerDown}
+      onPointerMove={onPointerMove}
+      onPointerUp={onPointerUp}
+      onPointerCancel={onPointerCancel}
+      onContextMenu={e => { e.preventDefault(); onContextMenu(card, e.clientX, e.clientY, setShowBack, showBack); }}
+    >
+      <img
+        src={showBack ? card.image_uri_back : card.image_uri}
+        alt={card.name}
+        css={cardImgStyle}
+        draggable={false}
+      />
+      {oneOneCounters > 0 && <span css={[counterStyle, { bottom: spacing.xs, left: spacing.xs }]}>+{oneOneCounters}/+{oneOneCounters}</span>}
+      {genericCounters > 0 && <span css={[counterStyle, { bottom: '50%', right: '50%', transform: 'translate(50%, 50%)' }]}>{genericCounters}</span>}
+    </motion.div>
+  );
 }
 
 // ---- CardViewer ----
@@ -388,130 +388,130 @@ const cardViewerImgStyle = css`
 `;
 
 function CardViewer({ name, image, onClose }) {
-    return (
-        <motion.div
-            css={cardViewerOverlayStyle}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.15 }}
-            onClick={onClose}
-        >
-            <motion.img
-                css={cardViewerImgStyle}
-                src={image}
-                alt={name}
-                draggable={false}
-                initial={{ scale: 0.85 }}
-                animate={{ scale: 1 }}
-                exit={{ scale: 0.85 }}
-                transition={{ type: 'spring', bounce: 0.2, duration: 0.25 }}
-            />
-        </motion.div>
-    );
+  return (
+    <motion.div
+      css={cardViewerOverlayStyle}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.15 }}
+      onClick={onClose}
+    >
+      <motion.img
+        css={cardViewerImgStyle}
+        src={image}
+        alt={name}
+        draggable={false}
+        initial={{ scale: 0.85 }}
+        animate={{ scale: 1 }}
+        exit={{ scale: 0.85 }}
+        transition={{ type: 'spring', bounce: 0.2, duration: 0.25 }}
+      />
+    </motion.div>
+  );
 }
 
 // ---- ZoneStack ----
 
 const ZoneStack = React.forwardRef(function ZoneStack({ label, cards, onClick, revealedState, zoneName, onDragStart, onDragMove, onDragEnd }, ref) {
-    const top = cards[cards.length - 1];
-    const dragRef = useRef(null);
+  const top = cards[cards.length - 1];
+  const dragRef = useRef(null);
 
-    function onPointerDown(e) {
-        if (!top) return;
-        e.currentTarget.setPointerCapture(e.pointerId);
-        dragRef.current = { moved: false, startX: e.clientX, startY: e.clientY };
+  function onPointerDown(e) {
+    if (!top) return;
+    e.currentTarget.setPointerCapture(e.pointerId);
+    dragRef.current = { moved: false, startX: e.clientX, startY: e.clientY };
+  }
+
+  function onPointerMove(e) {
+    if (!dragRef.current) return;
+    const dx = Math.abs(e.clientX - dragRef.current.startX);
+    const dy = Math.abs(e.clientY - dragRef.current.startY);
+    if (!dragRef.current.moved && (dx > 6 || dy > 6)) {
+      dragRef.current.moved = true;
+      onDragStart(top, zoneName, e.clientX, e.clientY);
     }
-
-    function onPointerMove(e) {
-        if (!dragRef.current) return;
-        const dx = Math.abs(e.clientX - dragRef.current.startX);
-        const dy = Math.abs(e.clientY - dragRef.current.startY);
-        if (!dragRef.current.moved && (dx > 6 || dy > 6)) {
-            dragRef.current.moved = true;
-            onDragStart(top, zoneName, e.clientX, e.clientY);
-        }
-        if (dragRef.current.moved) {
-            onDragMove(e.clientX, e.clientY);
-        }
+    if (dragRef.current.moved) {
+      onDragMove(e.clientX, e.clientY);
     }
+  }
 
-    function onPointerUp(e) {
-        if (!dragRef.current) return;
-        const wasDragged = dragRef.current.moved;
-        dragRef.current = null;
-        if (wasDragged) {
-            onDragEnd(top, zoneName, e.clientX, e.clientY);
-        } else {
-            onClick();
-        }
+  function onPointerUp(e) {
+    if (!dragRef.current) return;
+    const wasDragged = dragRef.current.moved;
+    dragRef.current = null;
+    if (wasDragged) {
+      onDragEnd(top, zoneName, e.clientX, e.clientY);
+    } else {
+      onClick();
     }
+  }
 
-    function onPointerCancel() {
-        if (dragRef.current?.moved) onDragEnd(null, zoneName, 0, 0);
-        dragRef.current = null;
-    }
+  function onPointerCancel() {
+    if (dragRef.current?.moved) onDragEnd(null, zoneName, 0, 0);
+    dragRef.current = null;
+  }
 
-    return (
-        <div
-            ref={ref}
-            css={zoneStyle}
-            onPointerDown={onPointerDown}
-            onPointerMove={onPointerMove}
-            onPointerUp={onPointerUp}
-            onPointerCancel={onPointerCancel}
-        >
-            {top && revealedState ? (
-                <img css={zoneImgStyle} src={top.image_uri} alt={top.name} draggable={false} />
-            ) : (
-                <div css={zoneEmptyStyle} />
-            )}
-            {cards.length > 0 && <span css={zoneCountStyle}>{cards.length}</span>}
-            <span css={zoneLabelStyle}>{label}</span>
-        </div>
-    );
+  return (
+    <div
+      ref={ref}
+      css={zoneStyle}
+      onPointerDown={onPointerDown}
+      onPointerMove={onPointerMove}
+      onPointerUp={onPointerUp}
+      onPointerCancel={onPointerCancel}
+    >
+      {top && revealedState ? (
+        <img css={zoneImgStyle} src={top.image_uri} alt={top.name} draggable={false} />
+      ) : (
+        <div css={zoneEmptyStyle} />
+      )}
+      {cards.length > 0 && <span css={zoneCountStyle}>{cards.length}</span>}
+      <span css={zoneLabelStyle}>{label}</span>
+    </div>
+  );
 });
 
 // ---- ContextMenu ----
 
 function ContextMenu({ card, x, y, onClose, items }) {
-    const menuRef = useRef(null);
+  const menuRef = useRef(null);
 
-    useEffect(() => {
-        function handleDown(e) {
-            if (menuRef.current && !menuRef.current.contains(e.target)) onClose();
-        }
-        document.addEventListener('pointerdown', handleDown);
-        return () => document.removeEventListener('pointerdown', handleDown);
-    }, [onClose]);
+  useEffect(() => {
+    function handleDown(e) {
+      if (menuRef.current && !menuRef.current.contains(e.target)) onClose();
+    }
+    document.addEventListener('pointerdown', handleDown);
+    return () => document.removeEventListener('pointerdown', handleDown);
+  }, [onClose]);
 
-    const style = {
-        top: Math.min(y, window.innerHeight - (items.length * 44 + 8)),
-        left: Math.min(x, window.innerWidth - 180),
-        transformOrigin: 'top left',
-    };
+  const style = {
+    top: Math.min(y, window.innerHeight - (items.length * 44 + 8)),
+    left: Math.min(x, window.innerWidth - 180),
+    transformOrigin: 'top left',
+  };
 
-    return (
-        <motion.div
-            ref={menuRef}
-            css={contextMenuStyle}
-            style={style}
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.9 }}
-            transition={{ duration: 0.1 }}
+  return (
+    <motion.div
+      ref={menuRef}
+      css={contextMenuStyle}
+      style={style}
+      initial={{ opacity: 0, scale: 0.9 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.9 }}
+      transition={{ duration: 0.1 }}
+    >
+      {items.map(item => (
+        <button
+          key={item.label}
+          css={item.danger ? menuItemDangerStyle : menuItemStyle}
+          onClick={() => { item.action(); onClose(); }}
         >
-            {items.map(item => (
-                <button
-                    key={item.label}
-                    css={item.danger ? menuItemDangerStyle : menuItemStyle}
-                    onClick={() => { item.action(); onClose(); }}
-                >
-                    {item.label}
-                </button>
-            ))}
-        </motion.div>
-    );
+          {item.label}
+        </button>
+      ))}
+    </motion.div>
+  );
 }
 
 // ---- ZoneViewer ----
@@ -579,394 +579,394 @@ const zoneCardImgStyle = css`
 `;
 
 const ZONE_DESTINATIONS = {
-    graveyard: [
-        { to: 'battlefield',    label: 'Move to Battlefield' },
-        { to: 'hand',           label: 'Move to Hand' },
-        { to: 'exile',          label: 'Move to Exile' },
-        { to: 'library_top',    label: 'Put on top of Library' },
-        { to: 'library_bottom', label: 'Put on bottom of Library' },
-    ],
-    exile: [
-        { to: 'battlefield',    label: 'Move to Battlefield' },
-        { to: 'hand',           label: 'Move to Hand' },
-        { to: 'graveyard',      label: 'Move to Graveyard' },
-        { to: 'library_top',    label: 'Put on top of Library' },
-        { to: 'library_bottom', label: 'Put on bottom of Library' },
-    ],
-    library: [
-        { to: 'battlefield',    label: 'Move to Battlefield' },
-        { to: 'hand',           label: 'Move to Hand' },
-        { to: 'graveyard',      label: 'Move to Graveyard' },
-        { to: 'exile',          label: 'Move to Exile' },
-        { to: 'library_bottom', label: 'Put on bottom of Library' },
-    ],
+  graveyard: [
+    { to: 'battlefield', label: 'Move to Battlefield' },
+    { to: 'hand', label: 'Move to Hand' },
+    { to: 'exile', label: 'Move to Exile' },
+    { to: 'library_top', label: 'Put on top of Library' },
+    { to: 'library_bottom', label: 'Put on bottom of Library' },
+  ],
+  exile: [
+    { to: 'battlefield', label: 'Move to Battlefield' },
+    { to: 'hand', label: 'Move to Hand' },
+    { to: 'graveyard', label: 'Move to Graveyard' },
+    { to: 'library_top', label: 'Put on top of Library' },
+    { to: 'library_bottom', label: 'Put on bottom of Library' },
+  ],
+  library: [
+    { to: 'battlefield', label: 'Move to Battlefield' },
+    { to: 'hand', label: 'Move to Hand' },
+    { to: 'graveyard', label: 'Move to Graveyard' },
+    { to: 'exile', label: 'Move to Exile' },
+    { to: 'library_bottom', label: 'Put on bottom of Library' },
+  ],
 };
 
 function ZoneViewer({ zoneName, cards, onMove, onClose, socket }) {
-    const [cardMenu, setCardMenu] = useState(null); // { card, x, y }
+  const [cardMenu, setCardMenu] = useState(null); // { card, x, y }
 
-    const destinations = ZONE_DESTINATIONS[zoneName] ?? [];
+  const destinations = ZONE_DESTINATIONS[zoneName] ?? [];
 
-    function openMenu(card, e) {
-        e.stopPropagation();
-        setCardMenu({ card, x: e.clientX, y: e.clientY });
-    }
+  function openMenu(card, e) {
+    e.stopPropagation();
+    setCardMenu({ card, x: e.clientX, y: e.clientY });
+  }
 
-    const menuItems = cardMenu ? destinations.map(dest => ({
-        label: dest.label,
-        action: () => onMove(cardMenu.card, dest.to),
-    })) : [];
+  const menuItems = cardMenu ? destinations.map(dest => ({
+    label: dest.label,
+    action: () => onMove(cardMenu.card, dest.to),
+  })) : [];
 
-    return (
-        <motion.div
-            css={zoneViewerOverlayStyle}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.15 }}
-            onClick={() => { if (cardMenu) setCardMenu(null); }}
-        >
-            <div css={zoneViewerHeaderStyle}>
-                <span css={zoneViewerTitleStyle}>{zoneName} ({cards.length})</span>
-                <div css={css`display: flex; gap: ${spacing.sm};`}>
-                    {(zoneName === 'graveyard' || zoneName === 'exile') && (
-                        <button
-                            css={zoneViewerCloseStyle}
-                            onClick={() => { socket.emit('shuffle_zone_into_library', { zone: zoneName }); onClose(); }}
-                        >
-                            Shuffle into Library
-                        </button>
-                    )}
-                    <button css={zoneViewerCloseStyle} onClick={onClose}>Close</button>
-                </div>
-            </div>
+  return (
+    <motion.div
+      css={zoneViewerOverlayStyle}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.15 }}
+      onClick={() => { if (cardMenu) setCardMenu(null); }}
+    >
+      <div css={zoneViewerHeaderStyle}>
+        <span css={zoneViewerTitleStyle}>{zoneName} ({cards.length})</span>
+        <div css={css`display: flex; gap: ${spacing.sm};`}>
+          {(zoneName === 'graveyard' || zoneName === 'exile') && (
+            <button
+              css={zoneViewerCloseStyle}
+              onClick={() => { socket.emit('shuffle_zone_into_library', { zone: zoneName }); onClose(); }}
+            >
+              Shuffle into Library
+            </button>
+          )}
+          <button css={zoneViewerCloseStyle} onClick={onClose}>Close</button>
+        </div>
+      </div>
 
-            <div css={zoneViewerGridStyle}>
-                {cards.length === 0 && (
-                    <p css={css`color:${colors.textFaint}; font-size:0.9rem;`}>Empty</p>
-                )}
-                {cards.map((card, i) => (
-                    <div
-                        key={card.instanceId ?? card.id ?? i}
-                        css={zoneCardWrapStyle}
-                        onClick={e => openMenu(card, e)}
-                    >
-                        <img css={zoneCardImgStyle} src={card.image_uri} alt={card.name} draggable={false} />
-                    </div>
-                ))}
-            </div>
+      <div css={zoneViewerGridStyle}>
+        {cards.length === 0 && (
+          <p css={css`color:${colors.textFaint}; font-size:0.9rem;`}>Empty</p>
+        )}
+        {cards.map((card, i) => (
+          <div
+            key={card.instanceId ?? card.id ?? i}
+            css={zoneCardWrapStyle}
+            onClick={e => openMenu(card, e)}
+          >
+            <img css={zoneCardImgStyle} src={card.image_uri} alt={card.name} draggable={false} />
+          </div>
+        ))}
+      </div>
 
-            <AnimatePresence>
-                {cardMenu && (
-                    <ContextMenu
-                        card={cardMenu.card}
-                        x={cardMenu.x}
-                        y={cardMenu.y}
-                        items={menuItems}
-                        onClose={() => setCardMenu(null)}
-                    />
-                )}
-            </AnimatePresence>
-        </motion.div>
-    );
+      <AnimatePresence>
+        {cardMenu && (
+          <ContextMenu
+            card={cardMenu.card}
+            x={cardMenu.x}
+            y={cardMenu.y}
+            items={menuItems}
+            onClose={() => setCardMenu(null)}
+          />
+        )}
+      </AnimatePresence>
+    </motion.div>
+  );
 }
 
 // ---- BoardMenu ----
 
 function BoardMenu({ x, y, onClose, setPage, revealedState, setRevealedState, socket }) {
-    const menuRef = useRef(null);
+  const menuRef = useRef(null);
 
-    useEffect(() => {
-        function handleDown(e) {
-            if (menuRef.current && !menuRef.current.contains(e.target)) onClose();
-        }
-        document.addEventListener('pointerdown', handleDown);
-        return () => document.removeEventListener('pointerdown', handleDown);
-    }, [onClose]);
+  useEffect(() => {
+    function handleDown(e) {
+      if (menuRef.current && !menuRef.current.contains(e.target)) onClose();
+    }
+    document.addEventListener('pointerdown', handleDown);
+    return () => document.removeEventListener('pointerdown', handleDown);
+  }, [onClose]);
 
-    const style = {
-        top: Math.min(y, window.innerHeight - 200),
-        left: Math.min(x, window.innerWidth - 180),
-    };
+  const style = {
+    top: Math.min(y, window.innerHeight - 200),
+    left: Math.min(x, window.innerWidth - 180),
+  };
 
-    const items = [
-        { label: 'Untap All', action: () => { socket.emit('untap_all'); } },
-        { label: 'Shuffle Library', action: () => { socket.emit('shuffle_library'); } },
-        { label: 'Play with Top Revealed', action: () => {setRevealedState(!revealedState)} },
-        { label: 'Restart Game', danger: true, action: () => { socket.emit('reset_game'); } },
-        { label: 'Return to Home', danger: true, action: () => {setPage('home')} },
-    ];
+  const items = [
+    { label: 'Untap All', action: () => { socket.emit('untap_all'); } },
+    { label: 'Shuffle Library', action: () => { socket.emit('shuffle_library'); } },
+    { label: 'Play with Top Revealed', action: () => { setRevealedState(!revealedState) } },
+    { label: 'Restart Game', danger: true, action: () => { socket.emit('reset_game'); } },
+    { label: 'Return to Home', danger: true, action: () => { setPage('home') } },
+  ];
 
-    return (
-        <motion.div
-            ref={menuRef}
-            css={contextMenuStyle}
-            style={style}
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.9 }}
-            transition={{ duration: 0.1 }}
+  return (
+    <motion.div
+      ref={menuRef}
+      css={contextMenuStyle}
+      style={style}
+      initial={{ opacity: 0, scale: 0.9 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.9 }}
+      transition={{ duration: 0.1 }}
+    >
+      {items.map(item => (
+        <button
+          key={item.label}
+          css={item.danger ? menuItemDangerStyle : menuItemStyle}
+          onClick={() => { item.action?.(); onClose(); }}
         >
-            {items.map(item => (
-                <button
-                    key={item.label}
-                    css={item.danger ? menuItemDangerStyle : menuItemStyle}
-                    onClick={() => { item.action?.(); onClose(); }}
-                >
-                    {item.label}
-                </button>
-            ))}
-        </motion.div>
-    );
+          {item.label}
+        </button>
+      ))}
+    </motion.div>
+  );
 }
 
 // ---- Board ----
 
 export default function Board({ socket, setPage }) {
-    const [gameState, setGameState] = useState(null);
-    const [battlefield, setBattlefield] = useState([]);
-    const [layers, setLayers] = useState({});
-    const layerCounter = useRef(0);
-    const [contextMenu, setContextMenu] = useState(null);
-    const [cardViewer, setCardViewer] = useState(null);
-    const [boardMenu, setBoardMenu] = useState(null);
-    const [zoneViewer, setZoneViewer] = useState(null);
-    const [revealedState, setRevealedState] = useState(false);
-    const [cardCounters, setCardCounters] = useState({}); // { [instanceId]: { oneOne, generic } }
-    const [counterModal, setCounterModal] = useState(null); // card
+  const [gameState, setGameState] = useState(null);
+  const [battlefield, setBattlefield] = useState([]);
+  const [layers, setLayers] = useState({});
+  const layerCounter = useRef(0);
+  const [contextMenu, setContextMenu] = useState(null);
+  const [cardViewer, setCardViewer] = useState(null);
+  const [boardMenu, setBoardMenu] = useState(null);
+  const [zoneViewer, setZoneViewer] = useState(null);
+  const [revealedState, setRevealedState] = useState(false);
+  const [cardCounters, setCardCounters] = useState({}); // { [instanceId]: { oneOne, generic } }
+  const [counterModal, setCounterModal] = useState(null); // card
 
-    useEffect(() => {
-        socket.on('game_state_update', (state) => {
-            setGameState(state);
-            if (!state) { setBattlefield([]); return; }
-            setBattlefield(prev => {
-                const prevMap = Object.fromEntries(prev.map(c => [c.instanceId, c]));
-                return state.battlefield.map((c, i) => ({
-                    ...c,
-                    position: prevMap[c.instanceId]?.position ?? (c.position?.x || c.position?.y ? c.position : {
-                        x: 20,
-                        y: 20,
-                    }),
-                }));
-            });
-            setLayers(prev => {
-                const next = { ...prev };
-                for (const c of state.battlefield) {
-                    if (!(c.instanceId in next)) {
-                        next[c.instanceId] = ++layerCounter.current;
-                    }
-                }
-                return next;
-            });
-        });
-        return () => socket.off('game_state_update');
-    }, []);
-
-    function focusCard(instanceId) {
-        setLayers(prev => ({ ...prev, [instanceId]: ++layerCounter.current }));
-    }
-
-    function handleTap(card) {
-        const tapped = !card.tapped;
-        setBattlefield(prev => prev.map(c => c.instanceId === card.instanceId ? { ...c, tapped } : c));
-        socket.emit('tap_card', { instanceId: card.instanceId, tapped });
-    }
-
-    function move(instanceId, to) {
-        socket.emit('move_card', { instanceId, to });
-    }
-
-    function handleAddCounters(instanceId, oneOne, generic) {
-        setCardCounters(prev => {
-            const cur = prev[instanceId] ?? { oneOne: 0, generic: 0 };
-            return { ...prev, [instanceId]: { oneOne: Math.max(0, cur.oneOne + oneOne), generic: Math.max(0, cur.generic + generic) } };
-        });
-    }
-
-    function handleContextMenu(card, x, y, setShowBack, showBack) {
-        const items = [];
-        items.push({ label: 'View Card', action: () => setCardViewer({name: card.name, image: showBack ? card.image_uri_back : card.image_uri}) });
-        items.push({ label: 'Add/Remove Counters', action: () => setCounterModal(card) });
-        if(card.image_uri_back) {
-            items.push({ label: 'Turn Over', action: () => setShowBack(prev => !prev)})
+  useEffect(() => {
+    socket.on('game_state_update', (state) => {
+      setGameState(state);
+      if (!state) { setBattlefield([]); return; }
+      setBattlefield(prev => {
+        const prevMap = Object.fromEntries(prev.map(c => [c.instanceId, c]));
+        return state.battlefield.map((c, i) => ({
+          ...c,
+          position: prevMap[c.instanceId]?.position ?? (c.position?.x || c.position?.y ? c.position : {
+            x: 20,
+            y: 20,
+          }),
+        }));
+      });
+      setLayers(prev => {
+        const next = { ...prev };
+        for (const c of state.battlefield) {
+          if (!(c.instanceId in next)) {
+            next[c.instanceId] = ++layerCounter.current;
+          }
         }
-        if (!card.isToken) {
-            items.push({ label: 'Move to Graveyard', action: () => move(card.instanceId, 'graveyard') });
-            items.push({ label: 'Move to Exile', action: () => move(card.instanceId, 'exile') });
-            items.push({ label: 'Return to Hand', action: () => move(card.instanceId, 'hand'), danger: true });
-            items.push({ label: 'Put on top of Library', action: () => move(card.instanceId, 'library_top'), danger: true });
-            items.push({ label: 'Put on bottom of Library', action: () => move(card.instanceId, 'library_bottom'), danger: true });
-            if (card.isCommander) {
-                items.push({ label: 'Return to Command Zone', action: () => move(card.instanceId, 'commandZone'), danger: true });
-            }
-        } else {
-            items.push({ label: 'Remove Token', action: () => move(card.instanceId, 'remove'), danger: true });
-        }
-        setContextMenu({ card, x, y, items });
+        return next;
+      });
+    });
+    return () => socket.off('game_state_update');
+  }, []);
+
+  function focusCard(instanceId) {
+    setLayers(prev => ({ ...prev, [instanceId]: ++layerCounter.current }));
+  }
+
+  function handleTap(card) {
+    const tapped = !card.tapped;
+    setBattlefield(prev => prev.map(c => c.instanceId === card.instanceId ? { ...c, tapped } : c));
+    socket.emit('tap_card', { instanceId: card.instanceId, tapped });
+  }
+
+  function move(instanceId, to) {
+    socket.emit('move_card', { instanceId, to });
+  }
+
+  function handleAddCounters(instanceId, oneOne, generic) {
+    setCardCounters(prev => {
+      const cur = prev[instanceId] ?? { oneOne: 0, generic: 0 };
+      return { ...prev, [instanceId]: { oneOne: Math.max(0, cur.oneOne + oneOne), generic: Math.max(0, cur.generic + generic) } };
+    });
+  }
+
+  function handleContextMenu(card, x, y, setShowBack, showBack) {
+    const items = [];
+    items.push({ label: 'View Card', action: () => setCardViewer({ name: card.name, image: showBack ? card.image_uri_back : card.image_uri }) });
+    items.push({ label: 'Add/Remove Counters', action: () => setCounterModal(card) });
+    if (card.image_uri_back) {
+      items.push({ label: 'Turn Over', action: () => setShowBack(prev => !prev) })
     }
-
-    function handleZoneMove(card, to) {
-        socket.emit('move_zone_card', { instanceId: card.instanceId ?? card.id, from: zoneViewer, to });
-        if (to === 'battlefield' || to === 'hand') setZoneViewer(null);
+    if (!card.isToken) {
+      items.push({ label: 'Move to Graveyard', action: () => move(card.instanceId, 'graveyard') });
+      items.push({ label: 'Move to Exile', action: () => move(card.instanceId, 'exile') });
+      items.push({ label: 'Return to Hand', action: () => move(card.instanceId, 'hand'), danger: true });
+      items.push({ label: 'Put on top of Library', action: () => move(card.instanceId, 'library_top'), danger: true });
+      items.push({ label: 'Put on bottom of Library', action: () => move(card.instanceId, 'library_bottom'), danger: true });
+      if (card.isCommander) {
+        items.push({ label: 'Return to Command Zone', action: () => move(card.instanceId, 'commandZone'), danger: true });
+      }
+    } else {
+      items.push({ label: 'Remove Token', action: () => move(card.instanceId, 'remove'), danger: true });
     }
+    setContextMenu({ card, x, y, items });
+  }
 
-    const battlefieldRef = useRef(null);
-    const [zoneDrag, setZoneDrag] = useState(null); // { card, x, y }
+  function handleZoneMove(card, to) {
+    socket.emit('move_zone_card', { instanceId: card.instanceId ?? card.id, from: zoneViewer, to });
+    if (to === 'battlefield' || to === 'hand') setZoneViewer(null);
+  }
 
-    function handleZoneDragStart(card, fromZone, clientX, clientY) {
-        setZoneDrag({ card, fromZone, x: clientX, y: clientY });
+  const battlefieldRef = useRef(null);
+  const [zoneDrag, setZoneDrag] = useState(null); // { card, x, y }
+
+  function handleZoneDragStart(card, fromZone, clientX, clientY) {
+    setZoneDrag({ card, fromZone, x: clientX, y: clientY });
+  }
+
+  function handleZoneDragMove(clientX, clientY) {
+    setZoneDrag(prev => prev ? { ...prev, x: clientX, y: clientY } : null);
+  }
+
+  function handleZoneDragEnd(card, fromZone, clientX, clientY) {
+    setZoneDrag(null);
+    if (!card) return;
+    const bfRect = battlefieldRef.current?.getBoundingClientRect();
+    const x = bfRect ? Math.max(0, clientX - bfRect.left - CARD_W / 2) : clientX;
+    const y = bfRect ? Math.max(0, clientY - bfRect.top - CARD_H / 2) : clientY;
+    const GRID = 20;
+    socket.emit('move_zone_card', {
+      instanceId: card.instanceId ?? card.id,
+      from: fromZone,
+      to: 'battlefield',
+      position: { x: Math.round(x / GRID) * GRID, y: Math.round(y / GRID) * GRID },
+    });
+  }
+
+  const libraryRef = useRef(null);
+  const graveyardRef = useRef(null);
+  const exileRef = useRef(null);
+
+  function getDropZone(clientX, clientY) {
+    const zones = [
+      { ref: libraryRef, name: 'library_top' },
+      { ref: graveyardRef, name: 'graveyard' },
+      { ref: exileRef, name: 'exile' },
+    ];
+    for (const { ref, name } of zones) {
+      if (!ref.current) continue;
+      const rect = ref.current.getBoundingClientRect();
+      if (clientX >= rect.left && clientX <= rect.right && clientY >= rect.top && clientY <= rect.bottom) {
+        return name;
+      }
     }
+    return null;
+  }
 
-    function handleZoneDragMove(clientX, clientY) {
-        setZoneDrag(prev => prev ? { ...prev, x: clientX, y: clientY } : null);
-    }
+  const library = gameState?.library ?? [];
+  const graveyard = gameState?.graveyard ?? [];
+  const exile = gameState?.exile ?? [];
+  const zoneViewerCards = zoneViewer === 'library' ? library : zoneViewer === 'graveyard' ? graveyard : zoneViewer === 'exile' ? exile : [];
 
-    function handleZoneDragEnd(card, fromZone, clientX, clientY) {
-        setZoneDrag(null);
-        if (!card) return;
-        const bfRect = battlefieldRef.current?.getBoundingClientRect();
-        const x = bfRect ? Math.max(0, clientX - bfRect.left - CARD_W / 2) : clientX;
-        const y = bfRect ? Math.max(0, clientY - bfRect.top - CARD_H / 2) : clientY;
-        const GRID = 20;
-        socket.emit('move_zone_card', {
-            instanceId: card.instanceId ?? card.id,
-            from: fromZone,
-            to: 'battlefield',
-            position: { x: Math.round(x / GRID) * GRID, y: Math.round(y / GRID) * GRID },
-        });
-    }
-
-    const libraryRef = useRef(null);
-    const graveyardRef = useRef(null);
-    const exileRef = useRef(null);
-
-    function getDropZone(clientX, clientY) {
-        const zones = [
-            { ref: libraryRef, name: 'library_top' },
-            { ref: graveyardRef, name: 'graveyard' },
-            { ref: exileRef, name: 'exile' },
-        ];
-        for (const { ref, name } of zones) {
-            if (!ref.current) continue;
-            const rect = ref.current.getBoundingClientRect();
-            if (clientX >= rect.left && clientX <= rect.right && clientY >= rect.top && clientY <= rect.bottom) {
-                return name;
-            }
-        }
-        return null;
-    }
-
-    const library = gameState?.library ?? [];
-    const graveyard = gameState?.graveyard ?? [];
-    const exile = gameState?.exile ?? [];
-    const zoneViewerCards = zoneViewer === 'library' ? library : zoneViewer === 'graveyard' ? graveyard : zoneViewer === 'exile' ? exile : [];
-
-    return (
-        <div css={boardStyle}>
-            <div css={sidebarStyle}>
-                <div css={css`flex: 1; display: flex; align-items: center; justify-content: center;`}>
-                    <button
-                        css={hamburgerBtnStyle}
-                        onClick={e => setBoardMenu({ x: e.clientX, y: e.clientY })}
-                    >
-                        ☰
-                    </button>
-                </div>
-                <ZoneStack ref={libraryRef} label="Library" cards={library} onClick={() => setZoneViewer('library')} revealedState={revealedState} zoneName="library" onDragStart={handleZoneDragStart} onDragMove={handleZoneDragMove} onDragEnd={handleZoneDragEnd} />
-                <ZoneStack ref={graveyardRef} label="Graveyard" cards={graveyard} onClick={() => setZoneViewer('graveyard')} revealedState={true} zoneName="graveyard" onDragStart={handleZoneDragStart} onDragMove={handleZoneDragMove} onDragEnd={handleZoneDragEnd} />
-                <ZoneStack ref={exileRef} label="Exile" cards={exile} onClick={() => setZoneViewer('exile')} revealedState={true} zoneName="exile" onDragStart={handleZoneDragStart} onDragMove={handleZoneDragMove} onDragEnd={handleZoneDragEnd} />
-                <div css={css`flex: 1;`} />
-            </div>
-
-            <div ref={battlefieldRef} css={battlefieldStyle}>
-                <AnimatePresence>
-                    {battlefield.map(card => (
-                        <BattlefieldCard
-                            key={card.instanceId}
-                            card={card}
-                            onTap={handleTap}
-                            onContextMenu={handleContextMenu}
-                            getDropZone={getDropZone}
-                            onMove={move}
-                            battlefieldRef={battlefieldRef}
-                            zIndex={layers[card.instanceId] ?? 1}
-                            onFocus={focusCard}
-                            oneOneCounters={cardCounters[card.instanceId]?.oneOne ?? 0}
-                            genericCounters={cardCounters[card.instanceId]?.generic ?? 0}
-                        />
-                    ))}
-                </AnimatePresence>
-            </div>
-
-            <AnimatePresence>
-                {zoneViewer && (
-                    <ZoneViewer
-                        zoneName={zoneViewer}
-                        cards={zoneViewerCards}
-                        onMove={handleZoneMove}
-                        onClose={() => setZoneViewer(null)}
-                        socket={socket}
-                    />
-                )}
-            </AnimatePresence>
-
-            <AnimatePresence>
-                {cardViewer && (
-                    <CardViewer
-                        name={cardViewer.name}
-                        image={cardViewer.image}
-                        onClose={() => setCardViewer(null)}
-                    />
-                )}
-                {counterModal && (
-                    <CounterModal
-                        card={counterModal}
-                        counters={cardCounters[counterModal.instanceId] ?? { oneOne: 0, generic: 0 }}
-                        onAdd={handleAddCounters}
-                        onClose={() => setCounterModal(null)}
-                    />
-                )}
-                {contextMenu && (
-                    <ContextMenu
-                        card={contextMenu.card}
-                        x={contextMenu.x}
-                        y={contextMenu.y}
-                        items={contextMenu.items}
-                        onClose={() => setContextMenu(null)}
-                    />
-                )}
-                {boardMenu && (
-                    <BoardMenu
-                        x={boardMenu.x}
-                        y={boardMenu.y}
-                        onClose={() => setBoardMenu(null)}
-                        setPage={setPage}
-                        revealedState={revealedState}
-                        setRevealedState={setRevealedState}
-                        socket={socket}
-                    />
-                )}
-            </AnimatePresence>
-
-            {zoneDrag && (
-                <img
-                    src={zoneDrag.card.image_uri}
-                    alt={zoneDrag.card.name}
-                    draggable={false}
-                    style={{
-                        position: 'fixed',
-                        left: zoneDrag.x - CARD_W / 2,
-                        top: zoneDrag.y - CARD_H / 2,
-                        width: CARD_W,
-                        borderRadius: 12,
-                        boxShadow: '0 8px 32px rgba(0,0,0,0.7)',
-                        pointerEvents: 'none',
-                        opacity: 0.9,
-                        zIndex: 1000,
-                        scale: 1.2
-                    }}
-                />
-            )}
+  return (
+    <div css={boardStyle}>
+      <div css={sidebarStyle}>
+        <div css={css`flex: 1; display: flex; align-items: center; justify-content: center;`}>
+          <button
+            css={hamburgerBtnStyle}
+            onClick={e => setBoardMenu({ x: e.clientX, y: e.clientY })}
+          >
+            ☰
+          </button>
         </div>
-    );
+        <ZoneStack ref={libraryRef} label="Library" cards={library} onClick={() => setZoneViewer('library')} revealedState={revealedState} zoneName="library" onDragStart={handleZoneDragStart} onDragMove={handleZoneDragMove} onDragEnd={handleZoneDragEnd} />
+        <ZoneStack ref={graveyardRef} label="Graveyard" cards={graveyard} onClick={() => setZoneViewer('graveyard')} revealedState={true} zoneName="graveyard" onDragStart={handleZoneDragStart} onDragMove={handleZoneDragMove} onDragEnd={handleZoneDragEnd} />
+        <ZoneStack ref={exileRef} label="Exile" cards={exile} onClick={() => setZoneViewer('exile')} revealedState={true} zoneName="exile" onDragStart={handleZoneDragStart} onDragMove={handleZoneDragMove} onDragEnd={handleZoneDragEnd} />
+        <div css={css`flex: 1;`} />
+      </div>
+
+      <div ref={battlefieldRef} css={battlefieldStyle}>
+        <AnimatePresence>
+          {battlefield.map(card => (
+            <BattlefieldCard
+              key={card.instanceId}
+              card={card}
+              onTap={handleTap}
+              onContextMenu={handleContextMenu}
+              getDropZone={getDropZone}
+              onMove={move}
+              battlefieldRef={battlefieldRef}
+              zIndex={layers[card.instanceId] ?? 1}
+              onFocus={focusCard}
+              oneOneCounters={cardCounters[card.instanceId]?.oneOne ?? 0}
+              genericCounters={cardCounters[card.instanceId]?.generic ?? 0}
+            />
+          ))}
+        </AnimatePresence>
+      </div>
+
+      <AnimatePresence>
+        {zoneViewer && (
+          <ZoneViewer
+            zoneName={zoneViewer}
+            cards={zoneViewerCards}
+            onMove={handleZoneMove}
+            onClose={() => setZoneViewer(null)}
+            socket={socket}
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {cardViewer && (
+          <CardViewer
+            name={cardViewer.name}
+            image={cardViewer.image}
+            onClose={() => setCardViewer(null)}
+          />
+        )}
+        {counterModal && (
+          <CounterModal
+            card={counterModal}
+            counters={cardCounters[counterModal.instanceId] ?? { oneOne: 0, generic: 0 }}
+            onAdd={handleAddCounters}
+            onClose={() => setCounterModal(null)}
+          />
+        )}
+        {contextMenu && (
+          <ContextMenu
+            card={contextMenu.card}
+            x={contextMenu.x}
+            y={contextMenu.y}
+            items={contextMenu.items}
+            onClose={() => setContextMenu(null)}
+          />
+        )}
+        {boardMenu && (
+          <BoardMenu
+            x={boardMenu.x}
+            y={boardMenu.y}
+            onClose={() => setBoardMenu(null)}
+            setPage={setPage}
+            revealedState={revealedState}
+            setRevealedState={setRevealedState}
+            socket={socket}
+          />
+        )}
+      </AnimatePresence>
+
+      {zoneDrag && (
+        <img
+          src={zoneDrag.card.image_uri}
+          alt={zoneDrag.card.name}
+          draggable={false}
+          style={{
+            position: 'fixed',
+            left: zoneDrag.x - CARD_W / 2,
+            top: zoneDrag.y - CARD_H / 2,
+            width: CARD_W,
+            borderRadius: 12,
+            boxShadow: '0 8px 32px rgba(0,0,0,0.7)',
+            pointerEvents: 'none',
+            opacity: 0.9,
+            zIndex: 1000,
+            scale: 1.2
+          }}
+        />
+      )}
+    </div>
+  );
 }

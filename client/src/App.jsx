@@ -10,6 +10,8 @@ import CreateDeck from './CreateDeck.jsx';
 import { colors, spacing, radius } from '@mtg/shared';
 import Board from './Board.jsx';
 import DeckEditor from './DeckEditor.jsx';
+import DropDownSearchBar from './DropDownSearchBar.jsx';
+import { SearchItemsComponent, SearchScryfallCommander } from './SearchUtils.jsx';
 
 const HAND_URL = import.meta.env.VITE_HAND_URL || 'http://localhost:5174';
 
