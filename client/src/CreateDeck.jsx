@@ -32,8 +32,8 @@ const labelStyle = css`
 
 const inputStyle = css`
     padding: ${spacing.xs} ${spacing.sm};
-    background: ${colors.bgRaised};
-    border: 1px solid ${colors.border};
+    border: none;
+    width: 300px;
     border-radius: ${radius.sm};
     color: ${colors.textPrimary};
     font-size: 0.9rem;
