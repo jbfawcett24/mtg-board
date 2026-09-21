@@ -5,14 +5,8 @@ export function SearchItemsComponent({ data, onClick }) {
   return (
     <p
       css={css`
-        background-color: ${colors.white};
         color: black;
-        padding: ${spacing.sm};
         font-size: 0.8rem;
-        cursor: pointer;
-        &:hover {
-          background-color: ${colors.lightGrey};
-        }
       `}
       onClick={onClick}
     >

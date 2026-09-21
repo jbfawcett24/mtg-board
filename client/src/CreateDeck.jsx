@@ -3,23 +3,18 @@ import { css } from '@emotion/react';
 import { toDbCard } from './api/scryfall.js';
 import { createDeck, insertCard } from './db.js';
 import { colors, spacing, radius } from '@mtg/shared';
+import Button from '@mtg/shared/src/Button.jsx';
 import DropDownSearchBar from './DropDownSearchBar.jsx';
 import { SearchScryfallCommander, SearchItemsComponent } from './SearchUtils.jsx';
+import ModalPopup from './Modal.jsx';
 
+const FORM_ID = 'create-deck-form';
+
+// The modal body now handles padding and scrolling, so the form only lays out its fields
 const formStyle = css`
     display: flex;
     flex-direction: column;
     gap: ${spacing.md};
-    padding: ${spacing.lg};
-    height: 100%;
-    overflow-y: auto;
-`;
-
-const headingStyle = css`
-    font-size: 1.2rem;
-    font-weight: bold;
-    color: ${colors.textPrimary};
-    margin: 0;
 `;
 
 const fieldStyle = css`
@@ -45,71 +40,95 @@ const inputStyle = css`
     &:focus { outline: none; border-color: ${colors.accent}; }
 `;
 
-const footerStyle = css`
-    display: flex;
-    justify-content: flex-end;
-    margin-top: auto;
-    padding-top: ${spacing.sm};
+const errorStyle = css`
+    margin: 0;
+    color: ${colors.error};
+    font-size: 0.85rem;
 `;
 
-const submitBtnStyle = css`
-    padding: ${spacing.sm} ${spacing.xl};
-    background: ${colors.accent};
-    color: ${colors.textPrimary};
-    border: none;
-    border-radius: ${radius.md};
-    cursor: pointer;
-    font-size: 0.9rem;
-    font-weight: bold;
-    &:hover { background: ${colors.accentHover}; }
-    &:disabled { opacity: 0.4; cursor: not-allowed; }
-`;
-
-export default function CreateDeck({ onClose }) {
+export default function CreateDeck({ onClose, isOpen }) {
   const [commanderSelection, setCommanderSelection] = useState(null);
+  const [error, setError] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
-  async function formSubmit(e) {
-    e.preventDefault();
-    const formData = new FormData(e.target);
-    const deckName = formData.get('deckName');
-
-    const result = await createDeck(deckName);
-    const deckId = result.lastInsertId;
-
-    const commanderCard = toDbCard(commanderSelection, 1, "commander");
-    await insertCard(deckId, commanderCard);
-
+  // Reset when closing so a stale commander isn't carried into the next deck
+  function handleClose() {
+    setCommanderSelection(null);
+    setError('');
     onClose();
   }
 
-  return (
-    <>
-      <form css={formStyle} onSubmit={formSubmit}>
-        <p css={headingStyle}>Create New Deck</p>
+  async function formSubmit(e) {
+    e.preventDefault();
+    const deckName = new FormData(e.currentTarget).get('deckName');
 
+    if (!commanderSelection) {
+      setError('Choose a commander from the search results.');
+      return;
+    }
+
+    setSubmitting(true);
+    setError('');
+    try {
+      const result = await createDeck(deckName);
+      const deckId = result.lastInsertId;
+
+      const commanderCard = toDbCard(commanderSelection, 1, 'commander');
+      await insertCard(deckId, commanderCard);
+
+      handleClose();
+    } catch (err) {
+      console.error('Failed to create deck:', err);
+      setError('Something went wrong creating the deck. Please try again.');
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <ModalPopup
+      isOpen={isOpen}
+      onClose={handleClose}
+      size="md"
+      title="Create New Deck"
+      actions={
+        // Lives in the modal footer, outside the <form>, so it points at the form by id
+        <Button type="submit" form={FORM_ID} size="sm" loading={submitting}>
+          Create
+        </Button>
+      }
+    >
+      <form id={FORM_ID} css={formStyle} onSubmit={formSubmit}>
         <div css={fieldStyle}>
           <label css={labelStyle} htmlFor="deckName">Deck Name</label>
-          <input css={inputStyle} type="text" id="deckName" name="deckName" placeholder="My Commander Deck" required />
-        </div>
-        <div
-          css={css`
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            width: 100%;
-          `}
-        >
-          <h3>Commander: </h3>
-          <DropDownSearchBar
-            onSearch={SearchScryfallCommander}
-            SearchItemComponent={SearchItemsComponent}
-            onItemSelect={(data) => setCommanderSelection(data)}
+          <input
+            css={inputStyle}
+            type="text"
+            id="deckName"
+            name="deckName"
+            placeholder="My Commander Deck"
+            required
           />
         </div>
-        <div css={footerStyle}>
-          <button css={submitBtnStyle} type="submit" disabled={!!status}>Import</button>
+
+        <div css={fieldStyle}>
+          <span css={labelStyle} aria-hidden="true">Commander</span>
+          <DropDownSearchBar
+            label="Commander"
+            placeholder="Search for a commander"
+            onSearch={SearchScryfallCommander}
+            SearchItemComponent={SearchItemsComponent}
+            onItemSelect={(data) => {
+              setCommanderSelection(data);
+              setError('');
+            }}
+            // Typing again invalidates the previous pick
+            onInputChange={() => setCommanderSelection(null)}
+          />
         </div>
+
+        {error && <p role="alert" css={errorStyle}>{error}</p>}
       </form>
-    </>
+    </ModalPopup>
   );
 }

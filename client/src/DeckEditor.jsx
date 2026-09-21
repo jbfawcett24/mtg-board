@@ -4,6 +4,7 @@ import { css } from "@emotion/react"
 import { colors, spacing, radius } from "@mtg/shared"
 import Modal from "./Modal.jsx"
 import { getAllImages, scryfallSearch, toDbCard } from "./api/scryfall.js"
+import Button from "@mtg/shared/src/Button.jsx"
 
 const mainCss = css`
   background-color: yellow;
@@ -62,47 +63,26 @@ export default function DeckEditor({ deck, onBack }) {
         onClose={() => setDeleteModal(false)}
         isOpen={deleteModal}
         size="sm"
-      >
-        <div
-          css={css`
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: space-between;
-            padding: ${spacing.xxl}
-          `}
-        >
-          <h2>Confirm Delete</h2>
-          <div
-            css={css`
-              display: flex;
-              align-items: center;
-              justify-content: space-evenly;
-              width: 100%;
-            `}
+        title="Delete Deck?"
+        actions={<>
+          <Button
+            danger
+            onClick={async () => {
+              await deleteDeck(deck.id)
+              onBack()
+            }}
           >
-            <button
-              css={deleteCss}
-              onClick={async () => {
-                await deleteDeck(deck.id)
-                onBack()
-              }}
-            >
-              Delete
-            </button>
-            <button
-              css={css`
-                padding: ${spacing.xs} ${spacing.sm};
-                cursor: pointer;
-              `}
-              onClick={() => {
-                setDeleteModal(false);
-              }}
-            >
-              Cancel
-            </button>
-          </div>
-        </div>
+            Delete
+          </Button>
+          <Button
+            onClick={() => { setDeleteModal(false) }}
+          >
+            Cancel
+          </Button>
+        </>
+        }
+      >
+        This will permanently delete the deck {deckName}. This can't be undone
       </Modal >
       )
     </>
@@ -189,16 +169,8 @@ function EditorHeader({ deckName, setDeckName, onBack, deckNameChange, onDelete 
           gap: 10px;
         `}
       >
-        <button
-          css={deleteCss}
-          onClick={onDelete}
-        >
-          Delete
-        </button>
-        <button
-          css={buttonCss}
-          onClick={onBack}
-        >Back</button>
+        <Button danger onClick={onDelete}>Delete</Button>
+        <Button onClick={onBack}>Back</Button>
       </div>
     </div >
   )
@@ -352,6 +324,7 @@ function CardList({ deck, onCardHover }) {
               </h3>
               {cards.sort((a, b) => a.name.localeCompare(b.name)).map(card => (
                 <CardListItem
+                  key={card.id}
                   card={card}
                   onHover={() => onCardHover(card)}
                   onMenuSelect={(e) => { setMenu({ card, x: e.clientX, y: e.clientY }); }}
@@ -371,7 +344,7 @@ function CardList({ deck, onCardHover }) {
           }}>
             Change Image
           </MenuItem>
-          {menu.card.type_line.includes('Creature') && menu.card.is_legendary && menu.card.board !== 'commander' && (
+          {menu.card.type_line.includes('Creature') && !!menu.card.is_legendary && menu.card.board !== 'commander' && (
             <MenuItem onClick={async () => {
               await setCommander(deck.id, menu.card)
               const updatedDeck = await getDeck(deck.id)
@@ -443,55 +416,39 @@ function CardList({ deck, onCardHover }) {
         onClose={() => { setAddMoreModal((false)) }}
         isOpen={addMoreModal}
         size="sm"
-      >
-        <form
-          css={css`
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: space-between;
-          `}
-          onSubmit={async (e) => {
+        title="Add More"
+        actions={
+          <Button onClick={async (e) => {
             e.preventDefault()
             await insertCard(deck.id, addMoreModal, addMoreAmount)
             setAddMoreAmount(3)
             setAddMoreModal(false)
             const newCards = await getCardsForDeck(deck.id)
             setCards(newCards)
-          }}
-        >
-          <h2>Add More</h2>
-          <div
-            css={css`
-              margin-bottom: ${spacing.xxl};
-              display: flex;
-              flex-direction: column;
-              gap: ${spacing.md};
-            `}
-          >
-            <input
-              type="number"
-              value={addMoreAmount}
-              onChange={(e) => setAddMoreAmount(e.target.value)}
-            />
-            <button
-              type="submit"
-              css={css`
-                padding: ${spacing.xs} ${spacing.sm}
-              `}
-            >Add</button>
-          </div>
-        </form>
+          }}>Add</Button>
+        }
+      >
+        <input
+          type="number"
+          value={addMoreAmount}
+          onChange={(e) => setAddMoreAmount(parseInt(e.target.value))}
+          css={css`
+            min-height: 30px;
+            min-width: 30px;
+          `}
+        />
       </Modal>
       <Modal
         onClose={() => { setCardImages({ loading: false, images: null }) }}
         isOpen={cardImages.loading || cardImages.images}
         size="xl"
+        title="Change Image"
       >
         <div css={css`
           max-height: 100%;
           overflow-y: auto;
           padding: ${spacing.md};
+          margin: auto;
         `}
         >
 

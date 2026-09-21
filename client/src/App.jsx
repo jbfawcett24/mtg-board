@@ -12,6 +12,7 @@ import Board from './Board.jsx';
 import DeckEditor from './DeckEditor.jsx';
 import DropDownSearchBar from './DropDownSearchBar.jsx';
 import { SearchItemsComponent, SearchScryfallCommander } from './SearchUtils.jsx';
+import Button from '@mtg/shared/src/Button.jsx';
 
 const HAND_URL = import.meta.env.VITE_HAND_URL || 'http://localhost:5174';
 
@@ -262,14 +263,15 @@ export default function App() {
         </main>
 
         <footer css={footerStyle}>
-          <button css={importBtnStyle} onClick={() => setPage('home')}>Cancel</button>
-          <button
-            css={primaryBtnStyle(!handConnected)}
+          {/* <button css={importBtnStyle} onClick={() => setPage('home')}>Cancel</button> */}
+          <Button onClick={() => setPage('home')} variant={"secondary"}>Cancel</Button>
+          <Button
+            size="md"
             disabled={!handConnected}
             onClick={handleStartGame}
           >
             Start Game
-          </button>
+          </Button>
         </footer>
       </div>
     );
@@ -282,12 +284,8 @@ export default function App() {
         <span css={titleStyle}>MTG Board</span>
         <div css={headerActionsStyle}>
           <span css={statusDotStyle(socketStatus === 'connected')} />
-          <button css={importBtnStyle} onClick={() => setAddDeck(true)}>
-            + Import Deck
-          </button>
-          <button css={css`${importBtnStyle}; color: ${colors.error}; border-color: ${colors.error};`} onClick={() => exit(0)}>
-            Quit
-          </button>
+          <Button onClick={() => setAddDeck(true)} variant='secondary'>+ Import Deck</Button>
+          <Button onClick={() => { exit(0) }} danger>Quit</Button>
         </div>
       </header>
 
@@ -323,25 +321,27 @@ export default function App() {
         <span css={css`font-size:0.85rem; color:${colors.textMuted};`}>
           {selectedDeck ? `Selected: ${selectedDeck.name}` : 'Select a deck to play'}
         </span>
-        <button
-          css={importBtnStyle}
+        <Button
+          variant='secondary'
           disabled={!selectedDeck}
           onClick={() => setPage('edit')}
         >
           Edit Deck
-        </button>
-        <button
-          css={primaryBtnStyle(!selectedDeck || socketStatus !== 'connected')}
+        </Button>
+        <Button
+          size='md'
           disabled={!selectedDeck || socketStatus !== 'connected'}
           onClick={handleCreateGame}
         >
           Create Game
-        </button>
+        </Button>
       </footer>
-
-      <Modal onClose={() => setAddDeck(false)} isOpen={addDeck}>
-        <CreateDeck onClose={handleDeckImported} />
-      </Modal>
+      <CreateDeck onClose={() => {
+        setAddDeck(false)
+        handleDeckImported()
+      }}
+        isOpen={addDeck}
+      />
     </div>
   );
 }
