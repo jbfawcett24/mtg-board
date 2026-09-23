@@ -35,7 +35,6 @@ const inputStyle = css`
     border: none;
     width: 300px;
     border-radius: ${radius.sm};
-    color: ${colors.textPrimary};
     font-size: 0.9rem;
     &:focus { outline: none; border-color: ${colors.accent}; }
 `;
@@ -70,10 +69,10 @@ export default function CreateDeck({ onClose, isOpen }) {
     setSubmitting(true);
     setError('');
     try {
-      const result = await createDeck(deckName);
+      const commanderCard = toDbCard(commanderSelection, 1, 'commander');
+      const result = await createDeck(deckName, 'commander', commanderCard.color_identity);
       const deckId = result.lastInsertId;
 
-      const commanderCard = toDbCard(commanderSelection, 1, 'commander');
       await insertCard(deckId, commanderCard);
 
       handleClose();

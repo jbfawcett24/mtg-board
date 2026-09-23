@@ -75,9 +75,9 @@ export async function getDeck(deckId) {
   const rows = await db.select('SELECT * FROM decks WHERE id = ?', [deckId])
   return rows[0]
 }
-export async function createDeck(name, format = 'commander') {
+export async function createDeck(name, format = 'commander', colorIdentity = '[]') {
   const db = await getDb();
-  return db.execute('INSERT INTO decks (name, format) VALUES ($1, $2)', [name, format]);
+  return db.execute('INSERT INTO decks (name, format, color_identity) VALUES ($1, $2, $3)', [name, format, colorIdentity]);
 }
 
 export async function deleteDeck(id) {
@@ -197,9 +197,9 @@ export async function changeCardImage(deckId, card, newUrlFront, newUrlBack) {
 }
 
 
-async function updateDeckColors(deckId, commander) {
+export async function updateDeckColors(deckId, commander) {
+  const db = await getDb();
   const colorIdentity = commander.color_identity ?? '[]';
-  console.log(colorIdentity)
   return db.execute(
     `UPDATE decks SET color_identity = $1 WHERE id = $2`,
     [colorIdentity, deckId]

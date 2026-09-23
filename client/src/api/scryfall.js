@@ -133,11 +133,23 @@ export async function resolveCollection(parsedCards) {
 
 export async function scryfallSearch(query, format, colors) {
   const baseUrl = 'https://api.scryfall.com/cards/search'
-  const q = `${query} f:${format} id<=${colors}`
-  console.log(colors)
+  let colorConstraint = ''
+  if (colors) {
+    try {
+      const parsed = Array.isArray(colors) ? colors : JSON.parse(colors)
+      if (parsed.length === 0) {
+        colorConstraint = ' id<=c'
+      } else {
+        colorConstraint = ` id<=${parsed.join('')}`
+      }
+    } catch {
+      colorConstraint = ` id<=${colors}`
+    }
+  }
+  const formatConstraint = format ? ` f:${format}` : ''
+  const q = `${query}${formatConstraint}${colorConstraint}`
   const params = new URLSearchParams({ q })
   const url = `${baseUrl}?${params.toString()}`
-  console.log(url)
   return fetch(url).then(res => res.json())
 }
 
