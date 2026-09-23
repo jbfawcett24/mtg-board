@@ -4,6 +4,8 @@ import { css } from "@emotion/react"
 import { colors, spacing, radius } from "@mtg/shared"
 import Modal from "./Modal.jsx"
 import { getAllImages, scryfallSearch, toDbCard } from "./api/scryfall.js"
+import DropDownSearchBar from "./DropDownSearchBar.jsx"
+import { SearchItemsComponent } from "./SearchUtils.jsx"
 import Button from "@mtg/shared/src/Button.jsx"
 
 const mainCss = css`
@@ -14,18 +16,6 @@ const mainCss = css`
   grid-template-columns: 1fr 4fr;
   grid-template-rows: ${spacing.xxl} 1fr;
 `
-
-
-const deleteCss = css`
-    padding: ${spacing.xs} ${spacing.sm};
-    background-color: ${colors.accent};
-    border: 1px solid transparent;
-    cursor: pointer;
-    border-radius: ${radius.sm};
-    color: ${colors.textPrimary};
-    &:hover { background-color: ${colors.accentHover}
-  `
-
 
 export default function DeckEditor({ deck, onBack }) {
   const [deckName, setDeckName] = useState(deck.name);
@@ -178,7 +168,6 @@ function EditorHeader({ deckName, setDeckName, onBack, deckNameChange, onDelete 
 
 function CardList({ deck, onCardHover }) {
   const [cards, setCards] = useState([])
-  const [search, setSearch] = useState("")
   const [searchResults, setSearchResults] = useState(null)
   const [displayCardList, setDisplayCardList] = useState([])
   const [menu, setMenu] = useState(null)
@@ -237,13 +226,32 @@ function CardList({ deck, onCardHover }) {
     setDisplayCardList(displayList)
   }, [cards])
 
-  const handleSearch = async (e) => {
-    setLoading((true))
-    e.preventDefault()
-    if (!search.trim()) return;
-    const data = await scryfallSearch(search, deck.format, deck.color_identity)
-    setSearchResults(data.data)
-    setLoading(false)
+  const handleSearch = async (query) => {
+    if (!query?.trim()) return []
+    try {
+      const data = await scryfallSearch(query, deck.format, deck.color_identity)
+      return data.data ?? []
+    } catch (err) {
+      console.error("Search failed:", err)
+      return []
+    }
+  }
+
+  const handleSubmit = async (query, currentResults) => {
+    if (currentResults && currentResults.length > 0) {
+      setSearchResults(currentResults)
+      return
+    }
+    if (!query?.trim()) return
+    setLoading(true)
+    try {
+      const data = await scryfallSearch(query, deck.format, deck.color_identity)
+      setSearchResults(data.data ?? [])
+    } catch (err) {
+      console.error("Search submit failed:", err)
+    } finally {
+      setLoading(false)
+    }
   }
 
   async function addCard(card) {
@@ -270,30 +278,17 @@ function CardList({ deck, onCardHover }) {
       >
         <div
           css={css`
-            display:flex;
+            display: flex;
             justify-content: flex-end;
-            gap: ${spacing.sm};
           `}
         >
-          {loading && <p>Loading...</p>}
-          <form
-            css={css`
-            display: flex;
-            width: 40%;
-          `}
-            onSubmit={(e) => { handleSearch(e) }}
-          >
-            <input
-              css={css`
-                height: 30px;
-                width: 100%;
-              `}
-              placeholder="Search"
-              value={search}
-              onChange={(e) => { setSearch(e.target.value) }}
-            />
-            <button type="submit">Search</button>
-          </form>
+          <DropDownSearchBar
+            onSearch={handleSearch}
+            onItemSelect={addCard}
+            onSubmit={handleSubmit}
+            SearchItemComponent={SearchItemsComponent}
+            label="Add Cards"
+          />
         </div>
         <div
           css={css`
@@ -334,7 +329,7 @@ function CardList({ deck, onCardHover }) {
             </div>
           ))}
         </div>
-      </div>
+      </div >
       {menu && (
         <ContextMenu x={menu.x} y={menu.y} onClose={() => setMenu(null)}>
           <MenuItem onClick={async () => {

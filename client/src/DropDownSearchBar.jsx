@@ -269,7 +269,7 @@ export default function DropDownSearchBar({
       onSubmit={(e) => {
         e.preventDefault()
         closeList()
-        onSubmit?.()
+        onSubmit?.(search, results)
       }}
       onBlur={handleBlur}
       onFocus={handleFocus}
@@ -308,13 +308,14 @@ export default function DropDownSearchBar({
             css={css`
               width: 100%;
               box-sizing: border-box;
+              font-size: 14px;
               padding: ${spacing.xs} ${spacing.sm};
             `}
           />
 
         </div>
 
-        {onSubmit && <Button type="submit">Search</Button>}
+        {onSubmit && <Button type="submit" size="sm">Search</Button>}
       </div>
 
       {showPopup &&
