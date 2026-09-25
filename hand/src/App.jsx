@@ -14,6 +14,7 @@ export default function App() {
     socket.connect();
 
     socket.on('connect', () => {
+      console.log("connected")
       setStatus('connected');
       const params = new URLSearchParams(window.location.search);
       const code = params.get('code');
