@@ -106,7 +106,12 @@ function HandCard({ card, index, isSelected, onSelect, onPlay, playLabel }) {
     }
   }, [isSelected]);
 
+  function isButtonPress(e) {
+    return e.target instanceof Element && e.target.closest('button');
+  }
+
   function startPress(e) {
+    if (isButtonPress(e)) return;
     e.preventDefault();
     timerRef.current = setTimeout(() => {
       timerRef.current = null;
@@ -115,6 +120,7 @@ function HandCard({ card, index, isSelected, onSelect, onPlay, playLabel }) {
   }
 
   function endPress(e) {
+    if (isButtonPress(e)) return;
     e.preventDefault();
     if (timerRef.current) {
       clearTimeout(timerRef.current);
@@ -197,7 +203,7 @@ function HandCard({ card, index, isSelected, onSelect, onPlay, playLabel }) {
                   {playLabel}
                 </Button>
                 <Button
-                  onClick={(e) => { e.stopPropagation(); }}
+                  onClick={(e) => { e.stopPropagation(); onSelect(card); }}
                   variant='secondary'
                   size='lg'
                 >

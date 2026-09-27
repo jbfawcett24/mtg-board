@@ -25,4 +25,7 @@ TODO - Board
 - [ ] look at top x of library in hand
 - [ ] Improve deck editor (just copy moxfield) - WIP - need tokens
 - [ ] Dungeons not appearing in tokens
+- [ ] Token checking 
+- [ ] Confirm modal for restarting the game
+- [ ] Drag straight from library to grave
 
