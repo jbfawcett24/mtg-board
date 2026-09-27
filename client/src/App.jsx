@@ -48,17 +48,6 @@ const headerActionsStyle = css`
   gap: ${spacing.md};
 `;
 
-const importBtnStyle = css`
-  padding: ${spacing.xs} ${spacing.md};
-  background: none;
-  border: 1px solid ${colors.border};
-  color: ${colors.textMuted};
-  border-radius: ${radius.md};
-  cursor: pointer;
-  font-size: 0.85rem;
-  &:hover { border-color: ${colors.accent}; color: ${colors.textPrimary}; }
-`;
-
 const mainStyle = css`
   flex: 1;
   padding: ${spacing.lg};
@@ -112,17 +101,6 @@ const footerStyle = css`
   gap: ${spacing.md};
 `;
 
-const primaryBtnStyle = (disabled) => css`
-  padding: ${spacing.sm} ${spacing.xl};
-  background: ${disabled ? colors.bgRaised : colors.accent};
-  color: ${disabled ? colors.textFaint : colors.textPrimary};
-  border: none;
-  border-radius: ${radius.md};
-  font-size: 1rem;
-  cursor: ${disabled ? 'not-allowed' : 'pointer'};
-  transition: background 0.15s;
-  &:hover:not(:disabled) { background: ${colors.accentHover}; }
-`;
 
 const lobbyStyle = css`
   display: flex;

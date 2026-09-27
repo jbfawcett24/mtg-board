@@ -1,10 +1,87 @@
 import { useEffect, useState } from 'react';
 import { socket } from './socket';
+import { colors, spacing } from '@mtg/shared';
+import { css } from '@emotion/react';
 import GameHand from './GameHand';
-import './App.css';
+import Button from '@mtg/shared/src/Button';
+
+const appStyle = css`
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+`;
+
+const headerStyle = css`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: ${spacing.sm} ${spacing.lg};
+  background: ${colors.bgSurface};
+  border-bottom: 1px solid ${colors.border};
+`;
+
+const handTitleStyle = css`
+  font-size: 1.1rem;
+  font-weight: bold;
+  color: ${colors.accent};
+`;
+
+const handMainStyle = css`
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: ${spacing.xl};
+`;
+
+const joinScreenStyle = css`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  max-width: 320px;
+
+  & h2 {
+    font-size: 1.4rem;
+    color: ${colors.textPrimary};
+  }
+`;
+
+const codeInputStyle = css`
+  width: 100%;
+  text-align: center;
+  font-size: 2rem;
+  letter-spacing: 0.3em;
+  padding: 12px;
+  background: ${colors.bgSurface};
+  border: 2px solid ${colors.bgRaised};
+  color: #eee;
+  border-radius: 8px;
+  font-family: monospace;
+  text-transform: uppercase;
+
+  &:focus {
+    outline: none;
+    border-color: ${colors.accent};
+  }
+`;
+
+const errorStyle = css`
+  color: ${colors.error};
+  font-size: 0.9rem;
+`;
+
+const statusDotStyle = (connected) => css`
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: ${connected ? colors.success : colors.error};
+  display: inline-block;
+`;
 
 export default function App() {
-  const [status, setStatus] = useState('disconnected');
+  const [socketStatus, setSocketStatus] = useState('disconnected');
   const [codeInput, setCodeInput] = useState('');
   const [gameCode, setGameCode] = useState(null);
   const [error, setError] = useState(null);
@@ -15,13 +92,13 @@ export default function App() {
 
     socket.on('connect', () => {
       console.log("connected")
-      setStatus('connected');
+      setSocketStatus('connected');
       const params = new URLSearchParams(window.location.search);
       const code = params.get('code');
       if (code) socket.emit('join_game', { code: code.toUpperCase() });
     });
     socket.on('disconnect', () => {
-      setStatus('disconnected');
+      setSocketStatus('disconnected');
       setGameCode(null);
       setInitialState(null);
     });
@@ -54,17 +131,17 @@ export default function App() {
   }
 
   return (
-    <div className="hand-layout">
-      <header className="hand-header">
-        <span className="hand-title">MTG Hand</span>
-        <span className={`dot ${status}`} />
+    <div css={appStyle}>
+      <header css={headerStyle}>
+        <span css={handTitleStyle}>MTG Hand</span>
+        <span css={statusDotStyle(socketStatus === 'connected')} />
       </header>
 
-      <main className="hand-main">
-        <div className="join-screen">
+      <main css={handMainStyle}>
+        <div css={joinScreenStyle}>
           <h2>Join a Game</h2>
           <input
-            className="code-input"
+            css={codeInputStyle}
             type="text"
             maxLength={6}
             placeholder="XXXXXX"
@@ -72,10 +149,13 @@ export default function App() {
             onChange={(e) => setCodeInput(e.target.value.toUpperCase())}
             onKeyDown={(e) => e.key === 'Enter' && joinGame()}
           />
-          {error && <p className="error">{error}</p>}
-          <button onClick={joinGame} disabled={status !== 'connected' || !codeInput.trim()}>
-            Join
-          </button>
+          {error && <p css={errorStyle}>{error}</p>}
+          <Button
+            onClick={joinGame}
+            disabled={socketStatus !== 'connected' || !codeInput.trim()}
+            size="xl"
+            spread
+          >Join</Button>
         </div>
       </main>
     </div>

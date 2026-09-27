@@ -24,6 +24,7 @@ export default function Button({
   loading = false,
   selected,          // true/false for toggle buttons; leave undefined otherwise
   disabled = false,
+  spread = false,
   ...rest
 }) {
   const c = buttonColors[danger ? "danger" : variant]
@@ -33,7 +34,7 @@ export default function Button({
     <button
       css={css`
         box-sizing: border-box;
-        min-width: ${s.minWidth};
+        min-width: ${spread ? '100%' : s.minWidth};
         padding: ${s.padding};
         font-size: ${s.fontSize};
         line-height: 1.2;
