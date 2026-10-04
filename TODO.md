@@ -23,9 +23,9 @@ TODO - Board
 - [ ] Have cards face down
 - [ ] Move cards straight to zones from hand
 - [ ] look at top x of library in hand
-- [ ] Improve deck editor (just copy moxfield) - WIP - need tokens
+- [x] Improve deck editor (just copy moxfield) - WIP - need tokens
 - [ ] Dungeons not appearing in tokens
-- [ ] Token checking 
-- [ ] Confirm modal for restarting the game
+- [x] Token checking 
+- [ ] Confirm modal for restarting the game and anything else that stops the game
 - [ ] Drag straight from library to grave
 

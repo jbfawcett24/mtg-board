@@ -49,7 +49,7 @@ export const radius = {
   sm: '4px',
   md: '8px',
   lg: '12px',
-  card: '24px',
+  card: '8px',
 };
 
 export const font = {

@@ -1,3 +1,5 @@
+import { getCardsForDeck, replaceTokensForDeck } from '../db.js';
+
 const SCRYFALL_API = 'https://api.scryfall.com';
 
 function chunkArray(arr, size) {
@@ -16,23 +18,26 @@ function toIdentifier(card) {
 }
 
 export function toDbCard(scryfallCard, quantity, board) {
-  const isDoubleFaced = scryfallCard.card_faces?.length > 0 &&
-    scryfallCard.card_faces[0].image_uris;
+  const frontFace = scryfallCard.card_faces?.[0];
+  const isDoubleFaced = Boolean(frontFace);
+  const typeLine = scryfallCard.type_line ?? frontFace?.type_line ?? '';
 
   return {
     scryfall_id: scryfallCard.id,
     name: scryfallCard.name,
     quantity,
     image_uri: isDoubleFaced
-      ? scryfallCard.card_faces[0].image_uris.normal
+      ? frontFace.image_uris?.normal ?? null
       : scryfallCard.image_uris?.normal ?? null,
     image_uri_back: isDoubleFaced
-      ? scryfallCard.card_faces[1].image_uris.normal
+      ? scryfallCard.card_faces[1]?.image_uris?.normal ?? null
       : null,
     board,
-    is_legendary: scryfallCard.type_line?.includes('Legendary') ?? false,
-    oracle_text: scryfallCard.oracle_text,
-    type_line: scryfallCard.type_line,
+    is_legendary: typeLine.includes('Legendary'),
+    // Scryfall puts these fields on the faces for double-faced cards.
+    // The database columns are NOT NULL, so always provide a string.
+    oracle_text: scryfallCard.oracle_text ?? frontFace?.oracle_text ?? '',
+    type_line: typeLine,
     color_identity: JSON.stringify(scryfallCard.color_identity ?? [])
   };
 }
@@ -71,6 +76,43 @@ async function fetchTokenImages(tokens) {
   return resolved;
 }
 
+/**
+ * Rechecks every card currently stored in a deck and replaces its token list
+ * with the token data currently returned by Scryfall.
+ *
+ * @param {number} deckId
+ * @returns {Promise<DbToken[]>}
+ */
+export async function refreshDeckTokens(deckId) {
+  const cards = await getCardsForDeck(deckId);
+  const cardIds = [...new Set(
+    cards
+      .map(card => card.scryfall_id)
+      .filter(Boolean)
+  )];
+
+  const chunks = chunkArray(cardIds, 75);
+  const allFound = [];
+
+  for (const chunk of chunks) {
+    const { found } = await fetchCollection(chunk.map(id => ({ id })));
+    allFound.push(...found);
+  }
+
+  const seenTokenNames = new Set();
+  const uniqueTokens = allFound
+    .flatMap(toDbTokens)
+    .filter(token => {
+      if (seenTokenNames.has(token.name)) return false;
+      seenTokenNames.add(token.name);
+      return true;
+    });
+
+  const tokens = await fetchTokenImages(uniqueTokens);
+  await replaceTokensForDeck(deckId, tokens);
+  return tokens;
+}
+
 async function fetchCollection(identifiers) {
   const res = await fetch(`${SCRYFALL_API}/cards/collection`, {
     method: 'POST',
@@ -96,13 +138,17 @@ export async function resolveCollection(parsedCards) {
   const allNotFound = [];
 
   for (const chunk of chunks) {
-    const identifiers = chunk.map(toIdentifier);
-    const { found, notFound } = await fetchCollection(identifiers);
+    const identifier = chunk.map(toIdentifier)
+    const { found, notFound } = await fetchCollection(identifier);
     allFound.push(...found.map(scryfallCard => {
-      const frontName = scryfallCard.name.split(' //')[0].trim().toLowerCase();
+      const frontName = scryfallCard.name.split(/\s+\/\//)[0].trim().toLowerCase();
       const source = chunk.find(
-        c => c.name.toLowerCase() === frontName
-      );
+        c => c.setCode.toLowerCase() === scryfallCard.set.toLowerCase()
+          && c.setNumber === scryfallCard.collector_number
+      ) ?? chunk.find(c => {
+        const name = c.name.split(/\s+\/\//)[0].split(/\s+\/\s+/)[0].trim().toLowerCase();
+        return name === frontName;
+      });
       console.log(scryfallCard)
       return { scryfallCard, quantity: source?.quantity ?? 1, board: source?.board ?? 'main' };
     }));
@@ -170,4 +216,37 @@ export async function getAllImages(card) {
 
   return allData.data
 
+}
+
+export function stringToIdentifiers(inputString) {
+  if (typeof inputString !== 'string') return [];
+
+  // A deck-list line has the form:
+  // quantity Card Name (SET) collector-number [optional flags]
+  // Trailing flags such as "*F*" are ignored.
+  const linePattern = /^\s*(\d+)\s+(.+?)\s+\(([A-Za-z0-9]+)\)\s+(\S+)(?:\s+.*)?$/;
+  let board = 'main';
+
+  return inputString
+    .split(/\r?\n/)
+    .map(line => line.trim())
+    .flatMap(line => {
+      if (!line) return [];
+      if (/^sideboard\s*:/i.test(line)) {
+        board = 'sideboard';
+        return [];
+      }
+
+      const match = line.match(linePattern);
+      if (!match) return [];
+
+      const [, quantity, name, setCode, setNumber] = match;
+      return [{
+        quantity: Number(quantity),
+        name: name.trim(),
+        setCode,
+        setNumber,
+        board,
+      }];
+    });
 }

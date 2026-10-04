@@ -5,13 +5,10 @@ import { QRCodeSVG } from 'qrcode.react';
 import { exit } from '@tauri-apps/plugin-process';
 import { socket } from './socket';
 import { getDb, getDecks, getCardsForDeck, getTokensForDeck } from './db.js';
-import Modal from './Modal.jsx';
 import CreateDeck from './CreateDeck.jsx';
 import { colors, spacing, radius } from '@mtg/shared';
 import Board from './Board.jsx';
 import DeckEditor from './DeckEditor.jsx';
-import DropDownSearchBar from './DropDownSearchBar.jsx';
-import { SearchItemsComponent, SearchScryfallCommander } from './SearchUtils.jsx';
 import Button from '@mtg/shared/src/Button.jsx';
 
 const HAND_URL = import.meta.env.VITE_HAND_URL || 'http://localhost:5174';
@@ -262,7 +259,7 @@ export default function App() {
         <span css={titleStyle}>MTG Board</span>
         <div css={headerActionsStyle}>
           <span css={statusDotStyle(socketStatus === 'connected')} />
-          <Button onClick={() => setAddDeck(true)} variant='secondary'>+ Import Deck</Button>
+          <Button onClick={() => setAddDeck(true)} variant='secondary'>+ Create Deck</Button>
           <Button onClick={() => { exit(0) }} danger>Quit</Button>
         </div>
       </header>

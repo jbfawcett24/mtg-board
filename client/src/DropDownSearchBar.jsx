@@ -82,6 +82,7 @@ export default function DropDownSearchBar({
 
   const debounceTimeout = useRef(null)
   const requestIdRef = useRef(0)
+  const lastFiredQueryRef = useRef(null)
   const inputRef = useRef(null)
   const listRef = useRef(null)
 
@@ -104,6 +105,7 @@ export default function DropDownSearchBar({
     }
 
     const thisRequestId = ++requestIdRef.current
+    lastFiredQueryRef.current = value.trim()
 
     try {
       const data = await onSearch?.(value)
@@ -268,8 +270,31 @@ export default function DropDownSearchBar({
       role="search"
       onSubmit={(e) => {
         e.preventDefault()
+
+        const query = search.trim()
+        const hasAlreadyFired = query && query === lastFiredQueryRef.current
+
+        // A submit is an explicit search: cancel the debounced search and
+        // close the autocomplete popup before handing the query to the
+        // submit handler.
+        clearTimeout(debounceTimeout.current)
         closeList()
-        onSubmit?.(search, results)
+
+        if (hasAlreadyFired) {
+          // The autocomplete request already searched this exact query. Let
+          // the submit handler use those results without starting another one.
+          onSubmit?.(search, results)
+          return
+        }
+
+        requestIdRef.current++
+        lastFiredQueryRef.current = query || null
+        setResults([])
+        setSearching(false)
+        setSearched(false)
+        setError(false)
+        setActiveIndex(-1)
+        onSubmit?.(search)
       }}
       onBlur={handleBlur}
       onFocus={handleFocus}

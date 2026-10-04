@@ -7,6 +7,7 @@ import { getAllImages, scryfallSearch, toDbCard } from "./api/scryfall.js"
 import DropDownSearchBar from "./DropDownSearchBar.jsx"
 import { SearchItemsComponent } from "./SearchUtils.jsx"
 import Button from "@mtg/shared/src/Button.jsx"
+import DeckEditorFooter from "./DeckEditorFooter.jsx"
 
 const mainCss = css`
   background-color: yellow;
@@ -14,13 +15,15 @@ const mainCss = css`
   height: 100vh;
   display: grid;
   grid-template-columns: 1fr 4fr;
-  grid-template-rows: ${spacing.xxl} 1fr;
+  grid-template-rows: ${spacing.xxl} 1fr ${spacing.xxl};
 `
 
 export default function DeckEditor({ deck, onBack }) {
   const [deckName, setDeckName] = useState(deck.name);
   const [deleteModal, setDeleteModal] = useState(false)
   const [hoverCardImage, setHoverCardImage] = useState(null)
+  const [totalCards, setTotalCards] = useState(0)
+  const [cardsRefreshKey, setCardsRefreshKey] = useState(0)
 
   async function deckNameChange() {
     const newName = deckName.trim();
@@ -47,7 +50,17 @@ export default function DeckEditor({ deck, onBack }) {
           onDelete={handleDelete}
         />
         <HoverCardImage card={hoverCardImage} />
-        <CardList deck={deck} onCardHover={setHoverCardImage} />
+        <CardList
+          deck={deck}
+          refreshKey={cardsRefreshKey}
+          onCardHover={setHoverCardImage}
+          onTotalCardsChange={setTotalCards}
+        />
+        <DeckEditorFooter
+          deckId={deck.id}
+          totalCards={totalCards}
+          onCardsImported={() => setCardsRefreshKey((key) => key + 1)}
+        />
       </div>
       <Modal
         onClose={() => setDeleteModal(false)}
@@ -166,7 +179,7 @@ function EditorHeader({ deckName, setDeckName, onBack, deckNameChange, onDelete 
   )
 }
 
-function CardList({ deck, onCardHover }) {
+function CardList({ deck, refreshKey, onCardHover, onTotalCardsChange }) {
   const [cards, setCards] = useState([])
   const [searchResults, setSearchResults] = useState(null)
   const [displayCardList, setDisplayCardList] = useState([])
@@ -186,10 +199,12 @@ function CardList({ deck, onCardHover }) {
     'Planeswalker',
     'Battle',
     'Land',
+    'Sideboard',
   ]
 
   function getCardCategory(card) {
     if (card.board === 'commander') return 'Commander'
+    if (card.board === 'sideboard') return 'Sideboard'
 
     const typeLine = card.type_line ?? ''
     if (typeLine.includes('Creature')) return 'Creature'
@@ -205,7 +220,15 @@ function CardList({ deck, onCardHover }) {
 
   useEffect(() => {
     getCardsForDeck(deck.id).then(setCards)
-  }, [deck.id])
+  }, [deck.id, refreshKey])
+
+  useEffect(() => {
+    onTotalCardsChange(
+      cards
+        .filter(card => card.board !== 'sideboard')
+        .reduce((total, card) => total + card.quantity, 0)
+    )
+  }, [cards, onTotalCardsChange])
 
   useEffect(() => {
     const grouped = CATEGORY_ORDER.reduce((acc, category) => {
@@ -238,7 +261,7 @@ function CardList({ deck, onCardHover }) {
   }
 
   const handleSubmit = async (query, currentResults) => {
-    if (currentResults && currentResults.length > 0) {
+    if (currentResults !== undefined) {
       setSearchResults(currentResults)
       return
     }
@@ -262,12 +285,13 @@ function CardList({ deck, onCardHover }) {
   }
 
   const cardListCss = css`
-    grid-row: 2/-1;
+    grid-row: 2/3;
     grid-column: 2/-1;
     background-color: ${colors.bgBase};
     display: flex;
     flex-direction: column;
     overflow: hidden;
+    min-height: 0;
     padding: ${spacing.md};
   `
 
@@ -292,14 +316,16 @@ function CardList({ deck, onCardHover }) {
         </div>
         <div
           css={css`
-            columns: 200px;
+            column-width: 200px;
             column-gap: ${spacing.sm};
-            height: 100%;
+            column-fill: auto;
+            flex: 1;
+            min-height: 0;
             overflow-x: auto;
+            overflow-y: hidden;
             margin-top: ${spacing.md}
           `}
         >
-          <h2>Total Cards - {cards.reduce((acc, card) => acc + card.quantity, 0)}</h2>
           {displayCardList.map(({ category, cards }) => (
             <div
               key={category}
@@ -511,6 +537,9 @@ function SearchResults({ results, addCard, showCardNumber = false, deckCards }) 
               aspect-ratio: 2.5/3.5;
               overflow: hidden;
               margin: ${spacing.md};
+              user-select: none;
+              -webkit-user-select: none;
+              -webkit-tap-highlight-color: transparent;
               &:hover .card-overlay {
                 opacity: 1;
               }
@@ -588,20 +617,20 @@ function CardListItem({ card, onHover, onMenuSelect, menuOpen }) {
       onMouseEnter={onHover}
     >
       <p>{card.quantity} {card.name}</p>
-      <div
+      <Button
         className="menu"
+        type="button"
+        variant="secondary"
+        size="xs"
+        square
+        aria-label={`Options for ${card.name}`}
         css={css`
           opacity: ${menuOpen ? "100%" : "0"};
           transition: opacity 0.1s ease-in-out;
-          cursor: pointer;
           pointer-events: none;
-          background-color: ${colors.bgRaised};
-          aspect-ratio: 1/1;
+          flex: 0 0 28px;
           width: 28px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          border-radius: ${radius.sm};
+          height: 28px;
           padding: 0;
           line-height: 1;
           font-size: 1.2rem;
@@ -613,7 +642,7 @@ function CardListItem({ card, onHover, onMenuSelect, menuOpen }) {
         onClick={(e) => onMenuSelect(e)}
       >
         <span>⋮</span>
-      </div>
+      </Button>
     </div>
   )
 }
@@ -688,29 +717,41 @@ function HoverCardImage({ card }) {
         justify-content: center;
       `}
     >
-      {card &&
-        <div
-          css={css`
+      <div
+        css={css`
             display: flex;
             align-items: center;
             justify-content: center;
             flex-direction: column;
             gap: ${spacing.sm};
           `}
-        >
-          <img
-            src={card.image_uri
-            }
-            alt={card.name}
-            css={css`
+      >
+        {card ?
+          <>
+            <img
+              src={card.image_uri
+              }
+              alt={card.name}
+              css={css`
                 width: 200px;
                 aspect-ratio: 2.5/3.5;
                 border-radius: ${radius.lg};
               `}
-          />
-          <p>{card.name}</p>
-        </div>
-      }
+            />
+            <p>{card.name}</p>
+          </>
+          :
+          <div
+            css={css`
+                width: 200px;
+                aspect-ratio: 2.5/3.5;
+                border-radius: ${radius.lg};
+                background-color: ${colors.bgSurface};
+              `}
+          >
+          </div>
+        }
+      </div>
     </div>
   )
 }

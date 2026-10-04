@@ -221,3 +221,11 @@ export async function insertToken(deckId, token) {
   );
 }
 
+export async function replaceTokensForDeck(deckId, tokens) {
+  const db = await getDb();
+  await db.execute('DELETE FROM tokens WHERE deck_id = $1', [deckId]);
+
+  for (const token of tokens) {
+    await insertToken(deckId, token);
+  }
+}
