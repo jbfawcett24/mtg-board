@@ -12,6 +12,7 @@ export default function DeckEditorFooter({ deckId, totalCards, onCardsImported }
   const [importCardsModal, setImportCardsModal] = useState(false)
   const [importing, setImporting] = useState(false)
   const [importCardsString, setImportCardsString] = useState("")
+  const [importErrors, setImportErrors] = useState([])
 
   const [showTokens, setShowTokens] = useState(false)
   const [tokens, setTokens] = useState([])
@@ -43,9 +44,10 @@ export default function DeckEditorFooter({ deckId, totalCards, onCardsImported }
   const importCards = async (e) => {
     e.preventDefault()
     setImporting(true)
+    setImportErrors([])
     try {
       const cardIdentifiers = stringToIdentifiers(importCardsString)
-      const { cards, tokens } = await resolveCollection(cardIdentifiers)
+      const { cards, tokens, notFound } = await resolveCollection(cardIdentifiers)
 
       // Insert cards one at a time so duplicate entries are merged by
       // insertCard and the imported quantity is preserved.
@@ -58,10 +60,26 @@ export default function DeckEditorFooter({ deckId, totalCards, onCardsImported }
       }
 
       onCardsImported?.()
-      setImportCardsString("")
-      setImportCardsModal(false)
+
+      if (notFound.length > 0) {
+        const errors = notFound.map(identifier => {
+          const source = cardIdentifiers.find(card =>
+            card.setCode.toLowerCase() === identifier.set?.toLowerCase()
+              && card.setNumber === identifier.collector_number
+          )
+
+          return source
+            ? `${source.quantity} ${source.name} (${source.setCode}) ${source.setNumber}`
+            : `${identifier.set ?? "Unknown set"} ${identifier.collector_number ?? "Unknown collector number"}`
+        })
+        setImportErrors(errors)
+      } else {
+        setImportCardsString("")
+        setImportCardsModal(false)
+      }
     } catch (error) {
       console.error("Card import failed:", error)
+      setImportErrors(["The cards could not be imported. Please try again."])
     } finally {
       setImporting(false)
     }
@@ -158,8 +176,54 @@ export default function DeckEditorFooter({ deckId, totalCards, onCardsImported }
             id="import-cards"
             value={importCardsString}
             onChange={(e) => setImportCardsString(e.target.value)}
-          >
-          </textarea>
+            placeholder="Paste your deck list here..."
+            aria-label="Deck list"
+            css={css`
+              box-sizing: border-box;
+              width: 100%;
+              min-height: 320px;
+              resize: vertical;
+              padding: ${spacing.sm};
+              color: ${colors.textPrimary};
+              background-color: ${colors.bgBase};
+              border: 1px solid ${colors.border};
+              border-radius: 6px;
+              font: inherit;
+              line-height: 1.4;
+
+              &:focus {
+                outline: none;
+                border-color: ${colors.borderFocus};
+                box-shadow: 0 0 0 2px ${colors.borderFocus};
+              }
+
+              &::placeholder {
+                color: ${colors.textMuted};
+              }
+            `}
+          />
+          {importErrors.length > 0 && (
+            <div
+              role="alert"
+              css={css`
+                margin-top: ${spacing.sm};
+                color: ${colors.error};
+                line-height: 1.4;
+              `}
+            >
+              <strong>Could not find:</strong>
+              <ul
+                css={css`
+                  margin: ${spacing.xs} 0 0;
+                  padding-left: ${spacing.lg};
+                `}
+              >
+                {importErrors.map((error, index) => (
+                  <li key={`${error}-${index}`}>{error}</li>
+                ))}
+              </ul>
+            </div>
+          )}
         </form>
       </Modal>
       <Modal

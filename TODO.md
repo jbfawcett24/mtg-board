@@ -28,4 +28,6 @@ TODO - Board
 - [x] Token checking 
 - [ ] Confirm modal for restarting the game and anything else that stops the game
 - [ ] Drag straight from library to grave
+- [ ] Legality checking 
+- [ ] partners (color id support for search, deck creation to select the partners, set backgrounds as commander in editor)
 

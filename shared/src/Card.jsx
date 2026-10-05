@@ -1,15 +1,20 @@
 import { css } from '@emotion/react';
-import { radius } from './theme';
+import { cardRadius } from './theme';
 
-const cardStyle = css`
-    width: 150px;
+const sizes = {
+  md: 150,
+  lg: 200,
+};
+
+export default function Card({ card, size = 'md' }) {
+  const width = sizes[size] ?? sizes.md;
+
+  const cardStyle = css`
+    width: ${width}px;
     height: auto;
     aspect-ratio: 1/1.4;
-    border-radius: ${radius.card};
-    `
+    border-radius: ${cardRadius(width)};
+  `;
 
-export function Card({card}) {
-    return (
-        <img css={cardStyle} src={card.image_uri} alt={card.name} />
-    )
+  return <img css={cardStyle} src={card.image_uri} alt={card.name} />;
 }

@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { css } from '@emotion/react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { colors, spacing, radius } from '@mtg/shared';
+import { cardRadius, colors, spacing, radius } from '@mtg/shared';
 
 const LONG_PRESS_MS = 500;
 const CARD_W = 120;
@@ -35,7 +35,7 @@ const zoneStyle = css`
     width: ${CARD_W}px;
     height: ${CARD_H}px;
     position: relative;
-    border-radius: ${radius.card};
+    border-radius: ${cardRadius(CARD_W)};
     border: 1px solid ${colors.border};
     overflow: hidden;
     cursor: pointer;
@@ -91,7 +91,7 @@ const battlefieldStyle = css`
 const cardImgStyle = css`
     width: ${CARD_W}px;
     height: auto;
-    border-radius: 12px;
+    border-radius: ${cardRadius(CARD_W)};
     display: block;
     box-shadow: 0 4px 16px rgba(0,0,0,0.6);
     pointer-events: none;
@@ -566,14 +566,14 @@ const zoneViewerGridStyle = css`
 const zoneCardWrapStyle = css`
     position: relative;
     cursor: pointer;
-    border-radius: ${radius.card};
+    border-radius: ${cardRadius(140)};
     overflow: visible;
 `;
 
 const zoneCardImgStyle = css`
     width: 140px;
     height: auto;
-    border-radius: ${radius.card};
+    border-radius: ${cardRadius(140)};
     display: block;
     box-shadow: 0 4px 16px rgba(0,0,0,0.6);
 `;

@@ -1,13 +1,14 @@
 import { useState, useEffect, useLayoutEffect, useRef } from "react"
 import { changeCardImage, deleteDeck, getCardsForDeck, getDb, insertCard, removeCard, setCommander, getDeck } from "./db.js"
 import { css } from "@emotion/react"
-import { colors, spacing, radius } from "@mtg/shared"
+import { colors, spacing, radius, cardRadius } from "@mtg/shared"
 import Modal from "./Modal.jsx"
 import { getAllImages, scryfallSearch, toDbCard } from "./api/scryfall.js"
 import DropDownSearchBar from "./DropDownSearchBar.jsx"
 import { SearchItemsComponent } from "./SearchUtils.jsx"
 import Button from "@mtg/shared/src/Button.jsx"
 import DeckEditorFooter from "./DeckEditorFooter.jsx"
+import { Card } from "@mtg/shared"
 
 const mainCss = css`
   background-color: yellow;
@@ -138,18 +139,6 @@ function EditorHeader({ deckName, setDeckName, onBack, deckNameChange, onDelete 
     border: none;
     outline: none;
   `;
-
-  const buttonCss = css`
-    background: none;
-    padding: ${spacing.xs} ${spacing.sm};
-    border: 1px solid ${colors.border};
-    border-radius: ${radius.sm};
-    color: ${colors.textPrimary};
-    cursor: pointer;
-    &:hover { 
-      background-color: ${colors.bgRaised};
-    }
-  `
 
   return (
     <div
@@ -362,6 +351,7 @@ function CardList({ deck, refreshKey, onCardHover, onTotalCardsChange }) {
             setCardImages({ loading: true, images: false })
             const images = await getAllImages(menu.card)
             setCardImages({ loading: false, images: images })
+            setMenu(null)
           }}>
             Change Image
           </MenuItem>
@@ -372,6 +362,7 @@ function CardList({ deck, refreshKey, onCardHover, onTotalCardsChange }) {
               deck.color_identity = updatedDeck.color_identity
               const newCards = await getCardsForDeck(deck.id)
               setCards(newCards)
+              setMenu(null)
             }}>
               Set as Commander
             </MenuItem>
@@ -545,15 +536,7 @@ function SearchResults({ results, addCard, showCardNumber = false, deckCards }) 
               }
             `}
           >
-            <img
-              css={css`
-                border-radius: ${radius.md};
-                width: 100%;
-              `}
-              src={imageUrl}
-              alt={card.name}
-              loading="lazy"
-            />
+            <Card size="lg" card={{ ...card, image_uri: imageUrl }} />
             {showCardNumber && deckCard?.quantity != null && (
               <div
                 css={css`
@@ -579,7 +562,7 @@ function SearchResults({ results, addCard, showCardNumber = false, deckCards }) 
                 position: absolute;
                 inset: 0;
                 background: rgba(0, 0, 0, 0.6);
-                border-radius: ${radius.md};
+                border-radius: ${cardRadius(200)};
                 display: flex;
                 align-items: center;
                 justify-content: center;
@@ -609,6 +592,8 @@ function CardListItem({ card, onHover, onMenuSelect, menuOpen }) {
         justify-content: space-between;
         gap: ${spacing.xs};
         min-height: 30px;
+        width: 100%;
+        min-width: 0;
         &:hover .menu {
           opacity: 100%;
           pointer-events: auto;
@@ -738,7 +723,14 @@ function HoverCardImage({ card }) {
                 border-radius: ${radius.lg};
               `}
             />
-            <p>{card.name}</p>
+            <p
+              css={css`
+                max-width: 190px;
+                margin: auto;
+              `}
+            >
+              {card.name}
+            </p>
           </>
           :
           <div

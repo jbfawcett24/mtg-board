@@ -49,8 +49,15 @@ export const radius = {
   sm: '4px',
   md: '8px',
   lg: '12px',
-  card: '8px',
 };
+
+// Preserve an 8px radius at the shared 150px card width, scaling it for
+// components that render cards at other widths.
+export function cardRadius(width) {
+  const numericWidth = Number(width);
+  if (!Number.isFinite(numericWidth)) return '9px';
+  return `${Math.max(1, numericWidth * 9 / 150)}px`;
+}
 
 export const font = {
   base: 'sans-serif',

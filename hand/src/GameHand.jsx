@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { css } from '@emotion/react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { socket } from './socket';
-import { colors, radius, spacing } from '@mtg/shared';
+import { cardRadius, colors, spacing } from '@mtg/shared';
 import Button from '@mtg/shared/src/Button';
 
 const LONG_PRESS_MS = 500;
@@ -68,7 +68,6 @@ const overlayStyle = css`
 
 const previewImgStyle = css`
     width: min(92vw, 400px);
-    border-radius: ${radius.card};
     box-shadow: 0 12px 48px rgba(0,0,0,0.8);
 `;
 
@@ -99,6 +98,7 @@ function HandCard({ card, index, isSelected, onSelect, onPlay, playLabel }) {
   const maxH = window.innerHeight * 0.72;
   const maxW = window.innerWidth * 0.82;
   const cardWidth = Math.min(maxH * CARD_ASPECT, maxW);
+  const previewWidth = Math.min(window.innerWidth * 0.92, 400);
 
   useEffect(() => {
     if (isSelected && cardRef.current) {
@@ -151,7 +151,7 @@ function HandCard({ card, index, isSelected, onSelect, onPlay, playLabel }) {
       >
         <motion.div
           css={css`
-              border-radius: ${radius.card};
+              border-radius: ${cardRadius(cardWidth)};
               border: ${isSelected ? `3px solid ${colors.accent}` : '3px solid transparent'};
               box-shadow: ${isSelected ? `0 0 24px ${colors.accent}88` : '0 6px 20px rgba(0,0,0,0.7)'};
               overflow: hidden;
@@ -233,7 +233,7 @@ function HandCard({ card, index, isSelected, onSelect, onPlay, playLabel }) {
             onPointerDown={() => setPreviewing(false)}
           >
             <motion.img
-              css={previewImgStyle}
+              css={[previewImgStyle, css`border-radius: ${cardRadius(previewWidth)};`]}
               src={card.image_uri}
               alt={card.name}
               initial={{ scale: 0.85, opacity: 0 }}
