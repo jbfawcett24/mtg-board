@@ -9,6 +9,7 @@ import { SearchItemsComponent } from "./SearchUtils.jsx"
 import Button from "@mtg/shared/src/Button.jsx"
 import DeckEditorFooter from "./DeckEditorFooter.jsx"
 import { Card } from "@mtg/shared"
+import Header from "./Header.jsx"
 
 const mainCss = css`
   background-color: yellow;
@@ -16,7 +17,7 @@ const mainCss = css`
   height: 100vh;
   display: grid;
   grid-template-columns: 1fr 4fr;
-  grid-template-rows: ${spacing.xxl} 1fr ${spacing.xxl};
+  grid-template-rows: auto 1fr auto;
 `
 
 export default function DeckEditor({ deck, onBack }) {
@@ -98,11 +99,6 @@ function EditorHeader({ deckName, setDeckName, onBack, deckNameChange, onDelete 
   const headerCss = css`
     grid-row: 1/2;
     grid-column: 1/-1;
-    background-color: ${colors.bgSurface};
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0 ${spacing.lg};
   `
 
   const inputWrapper = css`
@@ -140,31 +136,57 @@ function EditorHeader({ deckName, setDeckName, onBack, deckNameChange, onDelete 
     outline: none;
   `;
 
+  // return (
+  {/*   <div */ }
+  {/*     css={headerCss} */ }
+  {/*   > */ }
+  {/*     <div */ }
+  {/*       css={inputWrapper} */ }
+  {/*     > */ }
+  {/*       <input */ }
+  {/*         css={inputCss} */ }
+  {/*         type="text" */ }
+  {/*         value={deckName} */ }
+  {/*         onChange={(e) => { setDeckName(e.target.value) }} */ }
+  {/*         onBlur={() => { deckNameChange() }} */ }
+  {/*       /> */ }
+  {/*     </div> */ }
+  {/*     <div */ }
+  {/*       css={css` */ }
+  {/*         display: flex; */ }
+  {/*         gap: 10px; */ }
+  {/*       `} */ }
+  {/*     > */ }
+  {/*       <Button danger onClick={onDelete}>Delete</Button> */ }
+  {/*       <Button onClick={onBack}>Back</Button> */ }
+  {/*     </div> */ }
+  {/*   </div > */ }
+  {/* ) */ }
+
   return (
-    <div
-      css={headerCss}
-    >
-      <div
-        css={inputWrapper}
-      >
-        <input
-          css={inputCss}
-          type="text"
-          value={deckName}
-          onChange={(e) => { setDeckName(e.target.value) }}
-          onBlur={() => { deckNameChange() }}
-        />
-      </div>
-      <div
-        css={css`
-          display: flex;
-          gap: 10px;
-        `}
-      >
-        <Button danger onClick={onDelete}>Delete</Button>
-        <Button onClick={onBack}>Back</Button>
-      </div>
-    </div >
+    <div css={headerCss}>
+      <Header
+        title={
+          <div
+            css={inputWrapper}
+          >
+            <input
+              css={inputCss}
+              type="text"
+              value={deckName}
+              onChange={(e) => { setDeckName(e.target.value) }}
+              onBlur={() => { deckNameChange() }}
+            />
+          </div>
+        }
+        actions={
+          <>
+            <Button danger onClick={onDelete}>Delete</Button>
+            <Button onClick={onBack}>Back</Button>
+          </>
+        }
+      />
+    </div>
   )
 }
 
@@ -176,7 +198,7 @@ function CardList({ deck, refreshKey, onCardHover, onTotalCardsChange }) {
   const [addMoreModal, setAddMoreModal] = useState(null)
   const [addMoreAmount, setAddMoreAmount] = useState(3)
   const [loading, setLoading] = useState(false)
-  const [cardImages, setCardImages] = useState({ loading: false, images: null })
+  const [cardImages, setCardImages] = useState({ loading: false, images: null, card: null })
 
   const CATEGORY_ORDER = [
     'Commander',
@@ -348,9 +370,10 @@ function CardList({ deck, refreshKey, onCardHover, onTotalCardsChange }) {
       {menu && (
         <ContextMenu x={menu.x} y={menu.y} onClose={() => setMenu(null)}>
           <MenuItem onClick={async () => {
-            setCardImages({ loading: true, images: false })
-            const images = await getAllImages(menu.card)
-            setCardImages({ loading: false, images: images })
+            const targetCard = menu.card
+            setCardImages({ loading: true, images: false, card: targetCard })
+            const images = await getAllImages(targetCard)
+            setCardImages({ loading: false, images, card: targetCard })
             setMenu(null)
           }}>
             Change Image
@@ -451,7 +474,7 @@ function CardList({ deck, refreshKey, onCardHover, onTotalCardsChange }) {
         />
       </Modal>
       <Modal
-        onClose={() => { setCardImages({ loading: false, images: null }) }}
+        onClose={() => { setCardImages({ loading: false, images: null, card: null }) }}
         isOpen={cardImages.loading || cardImages.images}
         size="xl"
         title="Change Image"
@@ -478,12 +501,15 @@ function CardList({ deck, refreshKey, onCardHover, onTotalCardsChange }) {
                 const newUrlBack = isDoubleFaced
                   ? card.card_faces[1].image_uris.normal
                   : null;
+                const newArtCrop = isDoubleFaced
+                  ? card.card_faces[0].image_uris?.art_crop ?? null
+                  : card.image_uris?.art_crop ?? null;
 
-                await changeCardImage(deck.id, menu.card, newUrlFront, newUrlBack)
+                await changeCardImage(deck.id, cardImages.card, newUrlFront, newUrlBack, newArtCrop)
 
                 const newCards = await getCardsForDeck(deck.id)
                 setCards(newCards)
-                setCardImages({ loading: false, images: null })
+                setCardImages({ loading: false, images: null, card: null })
               }} />
           }
         </div>
@@ -693,6 +719,8 @@ function HoverCardImage({ card }) {
   return (
     <div
       css={css`
+        grid-row: 2/3;
+        grid-column: 1/2;
         width: 100%;
         height: 100%;
         background-color: ${colors.bgBase};

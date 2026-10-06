@@ -65,7 +65,7 @@ export default function DeckEditorFooter({ deckId, totalCards, onCardsImported }
         const errors = notFound.map(identifier => {
           const source = cardIdentifiers.find(card =>
             card.setCode.toLowerCase() === identifier.set?.toLowerCase()
-              && card.setNumber === identifier.collector_number
+            && card.setNumber === identifier.collector_number
           )
 
           return source
@@ -109,7 +109,7 @@ export default function DeckEditorFooter({ deckId, totalCards, onCardsImported }
         display: flex;
         align-items: center;
         justify-content: space-between;
-        padding: 0 ${spacing.md};
+        padding: ${spacing.sm} ${spacing.md};
       `}
       >
         <h3>Total Cards: {totalCards}</h3>

@@ -32,6 +32,9 @@ export function toDbCard(scryfallCard, quantity, board) {
     image_uri_back: isDoubleFaced
       ? scryfallCard.card_faces[1]?.image_uris?.normal ?? null
       : null,
+    art_crop: isDoubleFaced
+      ? frontFace.image_uris?.art_crop ?? null
+      : scryfallCard.image_uris?.art_crop ?? null,
     board,
     is_legendary: typeLine.includes('Legendary'),
     // Scryfall puts these fields on the faces for double-faced cards.

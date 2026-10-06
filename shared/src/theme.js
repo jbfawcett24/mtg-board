@@ -36,6 +36,14 @@ export const colors = {
   borderFocus: '#14b8a6',
 };
 
+export const manaColors = {
+  W: '#f8f6d8',
+  U: '#0e68ab',
+  B: '#150b00',
+  R: '#d3202a',
+  G: '#00733e',
+};
+
 export const spacing = {
   xs: '4px',
   sm: '8px',

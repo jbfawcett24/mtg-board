@@ -70,7 +70,13 @@ export default function CreateDeck({ onClose, isOpen }) {
     setError('');
     try {
       const commanderCard = toDbCard(commanderSelection, 1, 'commander');
-      const result = await createDeck(deckName, 'commander', commanderCard.color_identity);
+      const result = await createDeck(
+        deckName,
+        'commander',
+        commanderCard.color_identity,
+        commanderCard.art_crop,
+        commanderCard.image_uri
+      );
       const deckId = result.lastInsertId;
 
       await insertCard(deckId, commanderCard);

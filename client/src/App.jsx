@@ -10,6 +10,7 @@ import { colors, spacing, radius } from '@mtg/shared';
 import Board from './Board.jsx';
 import DeckEditor from './DeckEditor.jsx';
 import Button from '@mtg/shared/src/Button.jsx';
+import HomeScreen from './Home.jsx';
 
 const HAND_URL = import.meta.env.VITE_HAND_URL || 'http://localhost:5174';
 
@@ -251,6 +252,15 @@ export default function App() {
       </div>
     );
   }
+
+  return (
+    <HomeScreen
+      selectedDeck={selectedDeck}
+      setSelectedDeck={(deck) => setSelectedDeck(deck)}
+      onDeckEdit={(deck) => { setSelectedDeck(deck); setPage("edit"); }}
+      onCreateGame={handleCreateGame}
+    />
+  )
 
   // home page
   return (
