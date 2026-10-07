@@ -11,10 +11,22 @@ function chunkArray(arr, size) {
 }
 
 function toIdentifier(card) {
-  return {
-    set: card.setCode.toLowerCase(),
-    collector_number: card.setNumber,
-  };
+  if (card.setCode && card.setNumber) {
+    return {
+      set: card.setCode.toLowerCase(),
+      collector_number: card.setNumber,
+    };
+  }
+
+  return { name: card.name };
+}
+
+function normalizedCardName(name) {
+  return name
+    .split(/\s+\/\//)[0]
+    .split(/\s+\/\s+/)[0]
+    .trim()
+    .toLowerCase();
 }
 
 export function toDbCard(scryfallCard, quantity, board) {
@@ -146,11 +158,12 @@ export async function resolveCollection(parsedCards) {
     allFound.push(...found.map(scryfallCard => {
       const frontName = scryfallCard.name.split(/\s+\/\//)[0].trim().toLowerCase();
       const source = chunk.find(
-        c => c.setCode.toLowerCase() === scryfallCard.set.toLowerCase()
+        c => c.setCode
+          && c.setNumber
+          && c.setCode.toLowerCase() === scryfallCard.set.toLowerCase()
           && c.setNumber === scryfallCard.collector_number
       ) ?? chunk.find(c => {
-        const name = c.name.split(/\s+\/\//)[0].split(/\s+\/\s+/)[0].trim().toLowerCase();
-        return name === frontName;
+        return normalizedCardName(c.name) === normalizedCardName(frontName);
       });
       console.log(scryfallCard)
       return { scryfallCard, quantity: source?.quantity ?? 1, board: source?.board ?? 'main' };
@@ -224,10 +237,6 @@ export async function getAllImages(card) {
 export function stringToIdentifiers(inputString) {
   if (typeof inputString !== 'string') return [];
 
-  // A deck-list line has the form:
-  // quantity Card Name (SET) collector-number [optional flags]
-  // Trailing flags such as "*F*" are ignored.
-  const linePattern = /^\s*(\d+)\s+(.+?)\s+\(([A-Za-z0-9]+)\)\s+(\S+)(?:\s+.*)?$/;
   let board = 'main';
 
   return inputString
@@ -235,20 +244,32 @@ export function stringToIdentifiers(inputString) {
     .map(line => line.trim())
     .flatMap(line => {
       if (!line) return [];
-      if (/^sideboard\s*:/i.test(line)) {
+
+      const section = line.replace(/^~~\s*|\s*~~$/g, '').trim().toLowerCase();
+      if (/^(commanders?|commander section)$/.test(section)) {
+        board = 'commander';
+        return [];
+      }
+      if (/^(mainboard|main deck|main)$/.test(section)) {
+        board = 'main';
+        return [];
+      }
+      if (/^sideboard$/.test(section) || /^sideboard\s*:/i.test(line)) {
         board = 'sideboard';
         return [];
       }
 
-      const match = line.match(linePattern);
+      const match = line.match(/^\s*(\d+)\s+(.+?)\s*$/);
       if (!match) return [];
 
-      const [, quantity, name, setCode, setNumber] = match;
+      const [, quantity, cardDetails] = match;
+      const printing = cardDetails.match(/^(.+?)\s+\(([A-Za-z0-9]+)\)\s+(\S+)(?:\s+.*)?$/);
+      const [, name, setCode, setNumber] = printing ?? [null, cardDetails];
+
       return [{
         quantity: Number(quantity),
         name: name.trim(),
-        setCode,
-        setNumber,
+        ...(printing ? { setCode, setNumber } : {}),
         board,
       }];
     });

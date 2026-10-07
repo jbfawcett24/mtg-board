@@ -63,14 +63,22 @@ export default function DeckEditorFooter({ deckId, totalCards, onCardsImported }
 
       if (notFound.length > 0) {
         const errors = notFound.map(identifier => {
-          const source = cardIdentifiers.find(card =>
-            card.setCode.toLowerCase() === identifier.set?.toLowerCase()
-            && card.setNumber === identifier.collector_number
-          )
+          const source = cardIdentifiers.find(card => {
+            if (identifier.name) {
+              return card.name.trim().toLowerCase() === identifier.name.trim().toLowerCase()
+            }
+
+            return card.setCode
+              && card.setNumber === identifier.collector_number
+              && card.setCode.toLowerCase() === identifier.set?.toLowerCase()
+          })
 
           return source
-            ? `${source.quantity} ${source.name} (${source.setCode}) ${source.setNumber}`
-            : `${identifier.set ?? "Unknown set"} ${identifier.collector_number ?? "Unknown collector number"}`
+            ? source.setCode
+              ? `${source.quantity} ${source.name} (${source.setCode}) ${source.setNumber}`
+              : `${source.quantity} ${source.name}`
+            : identifier.name
+              ?? `${identifier.set ?? "Unknown set"} ${identifier.collector_number ?? "Unknown collector number"}`
         })
         setImportErrors(errors)
       } else {

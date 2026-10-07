@@ -139,8 +139,8 @@ export async function insertCard(deckId, card, amount = 1) {
   const db = await getDb();
 
   const existing = await db.select(
-    `SELECT id, quantity FROM deck_cards WHERE deck_id = $1 AND scryfall_id = $2 AND board = $3`,
-    [deckId, card.scryfall_id, card.board ?? 'main']
+    `SELECT id, quantity FROM deck_cards WHERE deck_id = $1 AND name = $2 AND board = $3`,
+    [deckId, card.name, card.board ?? 'main']
   );
 
   if (existing.length > 0) {
