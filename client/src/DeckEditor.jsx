@@ -89,7 +89,6 @@ export default function DeckEditor({ deck, onBack }) {
       >
         This will permanently delete the deck {deckName}. This can't be undone
       </Modal >
-      )
     </>
   )
 }
