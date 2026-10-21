@@ -1,11 +1,8 @@
 import { useEffect, useState } from 'react';
 import { css } from '@emotion/react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { QRCodeSVG } from 'qrcode.react';
-import { exit } from '@tauri-apps/plugin-process';
 import { socket } from './socket';
 import { getDb, getDecks, getCardsForDeck, getTokensForDeck } from './db.js';
-import CreateDeck from './CreateDeck.jsx';
 import { colors, spacing, radius } from '@mtg/shared';
 import Board from './Board.jsx';
 import DeckEditor from './DeckEditor.jsx';
@@ -50,43 +47,6 @@ const mainStyle = css`
   flex: 1;
   padding: ${spacing.lg};
   overflow-y: auto;
-`;
-
-const sectionTitleStyle = css`
-  font-size: 0.75rem;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: ${colors.textMuted};
-  margin-bottom: ${spacing.md};
-`;
-
-const deckGridStyle = css`
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  gap: ${spacing.md};
-`;
-
-const deckCardStyle = (selected) => css`
-  background: ${selected ? colors.bgRaised : colors.bgSurface};
-  border: 2px solid ${selected ? colors.accent : colors.border};
-  border-radius: ${radius.md};
-  padding: ${spacing.md};
-  cursor: pointer;
-  transition: border-color 0.15s, background 0.15s;
-  &:hover { border-color: ${colors.accent}; }
-`;
-
-const deckNameStyle = css`
-  font-size: 1rem;
-  font-weight: bold;
-  color: ${colors.textPrimary};
-  margin-bottom: ${spacing.xs};
-`;
-
-const deckMetaStyle = css`
-  font-size: 0.8rem;
-  color: ${colors.textMuted};
-  text-transform: capitalize;
 `;
 
 const footerStyle = css`
@@ -261,72 +221,4 @@ export default function App() {
       onCreateGame={handleCreateGame}
     />
   )
-
-  // home page
-  return (
-    <div css={layoutStyle}>
-      <header css={headerStyle}>
-        <span css={titleStyle}>MTG Board</span>
-        <div css={headerActionsStyle}>
-          <span css={statusDotStyle(socketStatus === 'connected')} />
-          <Button onClick={() => setAddDeck(true)} variant='secondary'>+ Create Deck</Button>
-          <Button onClick={() => { exit(0) }} danger>Quit</Button>
-        </div>
-      </header>
-
-      <main css={mainStyle}>
-        <p css={sectionTitleStyle}>Your Decks</p>
-        {decks.length === 0 ? (
-          <p css={css`color:${colors.textFaint}; font-size:0.9rem;`}>
-            No decks yet. Import one to get started.
-          </p>
-        ) : (
-          <div css={deckGridStyle}>
-            <AnimatePresence>
-              {decks.map(deck => (
-                <motion.div
-                  key={deck.id}
-                  initial={{ opacity: 0, y: 12 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.95 }}
-                  transition={{ type: 'spring', bounce: 0.2 }}
-                  css={deckCardStyle(selectedDeck?.id === deck.id)}
-                  onClick={() => { setSelectedDeck(deck); console.log(deck) }}
-                >
-                  <p css={deckNameStyle}>{deck.name}</p>
-                  <p css={deckMetaStyle}>{deck.format}</p>
-                </motion.div>
-              ))}
-            </AnimatePresence>
-          </div>
-        )}
-      </main>
-
-      <footer css={footerStyle}>
-        <span css={css`font-size:0.85rem; color:${colors.textMuted};`}>
-          {selectedDeck ? `Selected: ${selectedDeck.name}` : 'Select a deck to play'}
-        </span>
-        <Button
-          variant='secondary'
-          disabled={!selectedDeck}
-          onClick={() => setPage('edit')}
-        >
-          Edit Deck
-        </Button>
-        <Button
-          size='md'
-          disabled={!selectedDeck || socketStatus !== 'connected'}
-          onClick={handleCreateGame}
-        >
-          Create Game
-        </Button>
-      </footer>
-      <CreateDeck onClose={() => {
-        setAddDeck(false)
-        handleDeckImported()
-      }}
-        isOpen={addDeck}
-      />
-    </div>
-  );
 }
